@@ -1,0 +1,316 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MembershipRole {
+  ADMIN
+  MANAGER
+  OWNER
+  RESIDENT
+}
+
+enum PaymentStatus {
+  CURRENT
+  PENDING
+}
+
+enum CommunicationType {
+  QUERY
+  COMPLAINT
+  INCIDENT
+  SUGGESTION
+}
+
+enum WorkflowStatus {
+  DRAFT
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  ARCHIVED
+  PUBLISHED
+}
+
+enum Priority {
+  NORMAL
+  IMPORTANT
+  URGENT
+}
+
+enum VisibilityType {
+  COMMUNITY
+  BLOCKS
+  UNITS
+  OWNER
+  ADMIN_ONLY
+}
+
+enum MeetingType {
+  ORDINARY
+  EXTRAORDINARY
+  URGENT
+}
+
+model Organization {
+  id          String       @id @default(cuid())
+  name        String
+  slug        String       @unique
+  communities Community[]
+  users       Membership[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model User {
+  id          String       @id @default(cuid())
+  name        String
+  email       String       @unique
+  phone       String?
+  memberships Membership[]
+  owners      Owner[]
+  uploads     Document[]   @relation("UploadedBy")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Membership {
+  id             String         @id @default(cuid())
+  userId         String
+  organizationId String
+  communityId    String?
+  role           MembershipRole
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  community      Community?     @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId, communityId, role])
+  @@index([organizationId, communityId])
+}
+
+model Community {
+  id             String             @id @default(cuid())
+  organizationId String
+  name           String
+  slug           String
+  address        String?
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  memberships    Membership[]
+  blocks         Block[]
+  owners         Owner[]
+  communications Communication[]
+  announcements  Announcement[]
+  documents      Document[]
+  meetings       Meeting[]
+  categories     DocumentCategory[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+}
+
+model Block {
+  id              String             @id @default(cuid())
+  communityId     String
+  label           String
+  sortOrder       Int                @default(0)
+  community       Community          @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  units           Unit[]
+  visibilityLinks VisibilityTarget[]
+
+  @@unique([communityId, label])
+}
+
+model Unit {
+  id              String             @id @default(cuid())
+  blockId         String
+  floorLabel      String?
+  doorLabel       String
+  participation   Decimal?           @db.Decimal(7, 4)
+  paymentStatus   PaymentStatus      @default(CURRENT)
+  block           Block              @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  ownerships      Ownership[]
+  communications  Communication[]
+  visibilityLinks VisibilityTarget[]
+
+  @@unique([blockId, floorLabel, doorLabel])
+  @@index([blockId, paymentStatus])
+}
+
+model Owner {
+  id              String             @id @default(cuid())
+  communityId     String
+  userId          String?
+  name            String
+  email           String?
+  phone           String?
+  community       Community          @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user            User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  ownerships      Ownership[]
+  communications  Communication[]
+  visibilityLinks VisibilityTarget[]
+
+  @@index([communityId, name])
+}
+
+model Ownership {
+  id        String    @id @default(cuid())
+  unitId    String
+  ownerId   String
+  isPrimary Boolean   @default(false)
+  startDate DateTime  @default(now())
+  endDate   DateTime?
+  unit      Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  owner     Owner     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([unitId, ownerId, startDate])
+  @@index([unitId, endDate])
+}
+
+model Communication {
+  id              String             @id @default(cuid())
+  communityId     String
+  unitId          String?
+  ownerId         String?
+  type            CommunicationType
+  title           String
+  body            String
+  status          WorkflowStatus     @default(OPEN)
+  priority        Priority           @default(NORMAL)
+  convertedFromId String?            @unique
+  community       Community          @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  unit            Unit?              @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  owner           Owner?             @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  convertedFrom   Communication?     @relation("Conversion", fields: [convertedFromId], references: [id])
+  convertedTo     Communication?     @relation("Conversion")
+  documents       DocumentRelation[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([communityId, status, createdAt])
+}
+
+model Announcement {
+  id          String             @id @default(cuid())
+  communityId String
+  title       String
+  body        String
+  kind        String
+  priority    Priority           @default(NORMAL)
+  status      WorkflowStatus     @default(DRAFT)
+  visibility  VisibilityType     @default(COMMUNITY)
+  community   Community          @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  targets     VisibilityTarget[]
+  documents   DocumentRelation[]
+  publishedAt DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+model DocumentCategory {
+  id          String     @id @default(cuid())
+  communityId String
+  name        String
+  isStandard  Boolean    @default(false)
+  community   Community  @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  documents   Document[]
+
+  @@unique([communityId, name])
+}
+
+model Document {
+  id           String             @id @default(cuid())
+  communityId  String
+  categoryId   String?
+  uploadedById String
+  title        String
+  description  String?
+  documentDate DateTime?
+  status       WorkflowStatus     @default(DRAFT)
+  visibility   VisibilityType     @default(COMMUNITY)
+  community    Community          @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  category     DocumentCategory?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  uploadedBy   User               @relation("UploadedBy", fields: [uploadedById], references: [id])
+  files        StoredFile[]
+  targets      VisibilityTarget[]
+  relations    DocumentRelation[]
+  publishedAt  DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([communityId, status, createdAt])
+}
+
+model StoredFile {
+  id         String   @id @default(cuid())
+  documentId String
+  name       String
+  storageKey String   @unique
+  mimeType   String
+  sizeBytes  Int
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+}
+
+model VisibilityTarget {
+  id             String        @id @default(cuid())
+  documentId     String?
+  announcementId String?
+  unitId         String?
+  ownerId        String?
+  blockId        String?
+  document       Document?     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  announcement   Announcement? @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  unit           Unit?         @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  owner          Owner?        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  block          Block?        @relation(fields: [blockId], references: [id])
+
+  @@index([documentId])
+  @@index([announcementId])
+}
+
+model Meeting {
+  id          String             @id @default(cuid())
+  communityId String
+  title       String
+  type        MeetingType
+  startsAt    DateTime
+  location    String?
+  status      WorkflowStatus     @default(DRAFT)
+  community   Community          @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  agendaItems AgendaItem[]
+  documents   DocumentRelation[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([communityId, startsAt])
+}
+
+model AgendaItem {
+  id        String  @id @default(cuid())
+  meetingId String
+  position  Int
+  title     String
+  notes     String?
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, position])
+}
+
+model DocumentRelation {
+  id              String         @id @default(cuid())
+  documentId      String
+  communicationId String?
+  announcementId  String?
+  meetingId       String?
+  document        Document       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  communication   Communication? @relation(fields: [communicationId], references: [id], onDelete: Cascade)
+  announcement    Announcement?  @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  meeting         Meeting?       @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+}
