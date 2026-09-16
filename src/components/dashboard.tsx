@@ -35,26 +35,15 @@ export function Dashboard() {
     return initialCommunitiesList;
   });
 
-  // Selected community: null means the user is at the initial main selection screen
-  const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(() => {
-    try {
-      const savedId = localStorage.getItem("fincaflow-active-community");
-      if (savedId && initialCommunitiesList.some((c) => c.id === savedId)) {
-        return savedId;
-      }
-    } catch {
-      // ignore
-    }
-    return null;
-  });
+  // Each entry starts at the selector, including after a previous community was opened.
+  const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(null);
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showAddCommunityModal, setShowAddCommunityModal] = useState(false);
   const [communityModalOwnerMode, setCommunityModalOwnerMode] = useState<"sample" | "manual">("sample");
 
   // Get current active community object if one is chosen
-  const currentCommunity =
-    communities.find((c) => c.id === selectedCommunityId) || communities[0];
+  const currentCommunity = communities.find((c) => c.id === selectedCommunityId);
 
   function action(message: string) {
     setNotice(message);
@@ -62,31 +51,21 @@ export function Dashboard() {
   }
 
   function handleSelectCommunity(id: string) {
+    const target = communities.find((c) => c.id === id);
+    if (!target) return;
     setSelectedCommunityId(id);
     setDropdownOpen(false);
     setActive("Resumen");
-    const target = communities.find((c) => c.id === id);
-    if (target) {
-      action(`Comunidad abierta: ${target.name}`);
-    }
-    try {
-      localStorage.setItem("fincaflow-active-community", id);
-    } catch {
-      // ignore
-    }
+    action(`Comunidad abierta: ${target.name}`);
   }
 
   function handleReturnToHub() {
     setSelectedCommunityId(null);
     setDropdownOpen(false);
-    try {
-      localStorage.removeItem("fincaflow-active-community");
-    } catch {
-      // ignore
-    }
   }
 
   function handleAddOwnerToCurrentCommunity(newOwner: OwnerModel) {
+    if (!currentCommunity) return;
     const updatedCommunities = communities.map((comm) => {
       if (comm.id === currentCommunity.id) {
         const nextOwners = [newOwner, ...comm.owners];
@@ -108,6 +87,7 @@ export function Dashboard() {
   }
 
   function handleAddSampleOwnersToCurrentCommunity() {
+    if (!currentCommunity) return;
     const nextSampleOwners: OwnerModel[] = sampleOwnersBank.map((s, idx) => {
       const initials = s.name
         .split(" ")
@@ -291,7 +271,7 @@ export function Dashboard() {
   }, []);
 
   // If no community is selected yet (or user returned to the list), render the Community Selector Hub
-  if (!selectedCommunityId) {
+  if (!currentCommunity) {
     return (
       <>
         <CommunitySelectorHub
