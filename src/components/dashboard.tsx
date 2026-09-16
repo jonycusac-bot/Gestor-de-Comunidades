@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Icon } from "./icon";
 import { initialCommunitiesList, CommunityModel, OwnerModel } from "../data/communitiesData";
 import { OwnersView, sampleOwnersBank } from "./owners-view";
+import { CommunitySelectorHub } from "./community-selector-hub";
 
 const nav = [
   ["grid", "Resumen"],
@@ -34,7 +35,8 @@ export function Dashboard() {
     return initialCommunitiesList;
   });
 
-  const [selectedCommunityId, setSelectedCommunityId] = useState<string>(() => {
+  // Selected community: null means the user is at the initial main selection screen
+  const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(() => {
     try {
       const savedId = localStorage.getItem("fincaflow-active-community");
       if (savedId && initialCommunitiesList.some((c) => c.id === savedId)) {
@@ -43,14 +45,14 @@ export function Dashboard() {
     } catch {
       // ignore
     }
-    return "bel-air";
+    return null;
   });
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showAddCommunityModal, setShowAddCommunityModal] = useState(false);
   const [communityModalOwnerMode, setCommunityModalOwnerMode] = useState<"sample" | "manual">("sample");
 
-  // Get current active community object
+  // Get current active community object if one is chosen
   const currentCommunity =
     communities.find((c) => c.id === selectedCommunityId) || communities[0];
 
@@ -62,12 +64,23 @@ export function Dashboard() {
   function handleSelectCommunity(id: string) {
     setSelectedCommunityId(id);
     setDropdownOpen(false);
+    setActive("Resumen");
     const target = communities.find((c) => c.id === id);
     if (target) {
-      action(`Comunidad activa cambiada a: ${target.name}`);
+      action(`Comunidad abierta: ${target.name}`);
     }
     try {
       localStorage.setItem("fincaflow-active-community", id);
+    } catch {
+      // ignore
+    }
+  }
+
+  function handleReturnToHub() {
+    setSelectedCommunityId(null);
+    setDropdownOpen(false);
+    try {
+      localStorage.removeItem("fincaflow-active-community");
     } catch {
       // ignore
     }
@@ -277,10 +290,197 @@ export function Dashboard() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  // If no community is selected yet (or user returned to the list), render the Community Selector Hub
+  if (!selectedCommunityId) {
+    return (
+      <>
+        <CommunitySelectorHub
+          communities={communities}
+          onSelectCommunity={handleSelectCommunity}
+          onOpenAddModal={() => setShowAddCommunityModal(true)}
+        />
+
+        {/* Modal de Crear Comunidad accesible desde el Hub */}
+        {showAddCommunityModal && (
+          <div
+            className="modal-backdrop"
+            onClick={() => setShowAddCommunityModal(false)}
+          >
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-head">
+                <div>
+                  <small>NUEVA COMUNIDAD</small>
+                  <h2>Alta de comunidad</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddCommunityModal(false)}
+                >
+                  ×
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateCommunity}>
+                <label>
+                  Nombre de la comunidad / edificio
+                  <input
+                    name="name"
+                    required
+                    placeholder="Ej. Residencial Puerta del Mar"
+                    autoFocus
+                  />
+                </label>
+                <label>
+                  Dirección completa y ciudad
+                  <input
+                    name="location"
+                    required
+                    placeholder="Ej. Calle Mayor 14, Valencia"
+                  />
+                </label>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  <label>
+                    Nº de portales / bloques
+                    <input
+                      name="portals"
+                      type="number"
+                      defaultValue={2}
+                      min={1}
+                      max={50}
+                      required
+                    />
+                  </label>
+                  <label>
+                    Nº de viviendas
+                    <input
+                      name="totalUnits"
+                      type="number"
+                      defaultValue={48}
+                      min={1}
+                      max={500}
+                      required
+                    />
+                  </label>
+                </div>
+                <label>
+                  CIF Comunitario (opcional)
+                  <input name="cif" placeholder="Ej. H-12345678" />
+                </label>
+
+                {/* Configuración de propietarios iniciales */}
+                <div style={{ marginTop: "12px", borderTop: "1px solid var(--border)", paddingTop: "12px" }}>
+                  <small style={{ fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: "8px" }}>
+                    PROPIETARIOS INICIALES
+                  </small>
+                  <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
+                    <button
+                      type="button"
+                      onClick={() => setCommunityModalOwnerMode("sample")}
+                      style={{
+                        flex: 1,
+                        padding: "8px 12px",
+                        borderRadius: "8px",
+                        fontSize: "0.85rem",
+                        fontWeight: 500,
+                        border: "1px solid",
+                        borderColor: communityModalOwnerMode === "sample" ? "var(--primary)" : "var(--border)",
+                        background: communityModalOwnerMode === "sample" ? "#eff6ff" : "#fff",
+                        color: communityModalOwnerMode === "sample" ? "var(--primary)" : "var(--text)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Generar 6 propietarios de ejemplo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCommunityModalOwnerMode("manual")}
+                      style={{
+                        flex: 1,
+                        padding: "8px 12px",
+                        borderRadius: "8px",
+                        fontSize: "0.85rem",
+                        fontWeight: 500,
+                        border: "1px solid",
+                        borderColor: communityModalOwnerMode === "manual" ? "var(--primary)" : "var(--border)",
+                        background: communityModalOwnerMode === "manual" ? "#eff6ff" : "#fff",
+                        color: communityModalOwnerMode === "manual" ? "var(--primary)" : "var(--text)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Añadir 1 propietario manual
+                    </button>
+                  </div>
+
+                  <input type="hidden" name="ownerMode" value={communityModalOwnerMode} />
+
+                  {communityModalOwnerMode === "sample" ? (
+                    <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", margin: "4px 0 12px", background: "#f8fafc", padding: "10px 12px", borderRadius: "8px" }}>
+                      💡 Se autogenerarán 6 propietarios realistas (con DNI, teléfonos, correos y coeficientes de participación) para que puedas probar la comunidad de inmediato.
+                    </p>
+                  ) : (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", background: "#f8fafc", padding: "12px", borderRadius: "8px", marginBottom: "12px" }}>
+                      <label style={{ gridColumn: "1 / -1" }}>
+                        Nombre y apellidos
+                        <input name="ownerName" placeholder="Ej. Carlos Mendoza Gil" defaultValue="Carlos Mendoza Gil" />
+                      </label>
+                      <label>
+                        Vivienda asignada
+                        <input name="ownerHome" placeholder="Ej. Portal 1 · 1º A" defaultValue="Portal 1 · 1º A" />
+                      </label>
+                      <label>
+                        Email
+                        <input name="ownerEmail" type="email" placeholder="carlos@ejemplo.es" defaultValue="carlos@ejemplo.es" />
+                      </label>
+                      <label>
+                        Teléfono
+                        <input name="ownerPhone" placeholder="+34 611 22 33 44" defaultValue="+34 611 22 33 44" />
+                      </label>
+                      <label>
+                        Estado de cuotas
+                        <select name="ownerPayment" defaultValue="Al día">
+                          <option value="Al día">Al día</option>
+                          <option value="Pendiente">Pendiente</option>
+                        </select>
+                      </label>
+                    </div>
+                  )}
+                </div>
+
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddCommunityModal(false)}
+                  >
+                    Cancelar
+                  </button>
+                  <button className="primary" type="submit">
+                    Crear comunidad
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {notice && (
+          <aside className="toast" role="status">
+            <Icon name="check" size={16} />
+            <span>{notice}</span>
+          </aside>
+        )}
+      </>
+    );
+  }
+
   return (
     <div className="app-shell">
       <aside className={`sidebar ${sidebar ? "is-open" : ""}`}>
-        <div className="brand">
+        <div
+          className="brand"
+          style={{ cursor: "pointer" }}
+          onClick={handleReturnToHub}
+          title="Volver a la selección de comunidades"
+        >
           <span className="brand-mark">
             <Icon name="building" size={22} />
           </span>
@@ -288,7 +488,38 @@ export function Dashboard() {
             Finca<span>Flow</span>
           </span>
         </div>
-        <div className="workspace-label">GESTIÓN</div>
+
+        {/* Botón de acceso directo para cambiar de comunidad */}
+        <div style={{ padding: "0 14px 12px" }}>
+          <button
+            type="button"
+            className="switch-community-btn"
+            style={{
+              width: "100%",
+              justifyContent: "space-between",
+              padding: "8px 10px",
+              background: "#163c2c",
+              border: "1px solid rgba(255,255,255,0.12)",
+              color: "#e6f2eb",
+              borderRadius: "8px",
+              fontSize: "11px",
+              fontWeight: 600,
+              margin: 0,
+            }}
+            onClick={handleReturnToHub}
+            title="Ver todas las comunidades"
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <Icon name="building" size={14} />
+              <span>Cambiar comunidad</span>
+            </span>
+            <span style={{ fontSize: "10px", opacity: 0.7 }}>◀ Salir</span>
+          </button>
+        </div>
+
+        <div className="workspace-label">
+          {currentCommunity.name.toUpperCase()}
+        </div>
         <nav>
           {nav.map(([icon, label]) => (
             <button
@@ -435,6 +666,15 @@ export function Dashboard() {
           </div>
 
           <div className="header-tools">
+            <button
+              id="header-change-community-btn"
+              className="switch-community-btn"
+              onClick={handleReturnToHub}
+              title="Volver al selector de comunidades"
+            >
+              <Icon name="grid" size={13} />
+              <span>Cambiar comunidad</span>
+            </button>
             <label className="search">
               <Icon name="search" size={18} />
               <input
