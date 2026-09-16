@@ -80,6 +80,13 @@ export function OwnersView({
       statusFilter === "todos" ? true : o.payment === statusFilter;
 
     return matchesQuery && matchesStatus;
+  }).sort((a, b) => {
+    const portalNumber = (home: string) => {
+      const match = home.match(/(?:bloque|portal)\s*(\d+)/i);
+      return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER;
+    };
+    return portalNumber(a.home) - portalNumber(b.home)
+      || a.home.localeCompare(b.home, "es", { numeric: true, sensitivity: "base" });
   });
 
   const upToDateCount = currentCommunity.owners.filter(

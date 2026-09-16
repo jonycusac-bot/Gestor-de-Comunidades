@@ -7,7 +7,6 @@ import { OwnersView, sampleOwnersBank } from "./owners-view";
 import { CommunitySelectorHub } from "./community-selector-hub";
 
 const nav = [
-  ["grid", "Resumen"],
   ["building", "Comunidades"],
   ["users", "Propietarios"],
   ["message", "Comunicaciones"],
@@ -15,6 +14,7 @@ const nav = [
   ["folder", "Documentos"],
   ["calendar", "Juntas"],
   ["wallet", "Economía"],
+  ["grid", "Resumen"],
 ] as const;
 
 export function Dashboard() {
@@ -35,15 +35,15 @@ export function Dashboard() {
     return initialCommunitiesList;
   });
 
-  // Each entry starts at the selector, including after a previous community was opened.
+  // Each entry starts at the community selector.
   const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(null);
 
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showAddCommunityModal, setShowAddCommunityModal] = useState(false);
   const [communityModalOwnerMode, setCommunityModalOwnerMode] = useState<"sample" | "manual">("sample");
 
   // Get current active community object if one is chosen
-  const currentCommunity = communities.find((c) => c.id === selectedCommunityId);
+  const currentCommunity =
+    communities.find((c) => c.id === selectedCommunityId);
 
   function action(message: string) {
     setNotice(message);
@@ -54,14 +54,8 @@ export function Dashboard() {
     const target = communities.find((c) => c.id === id);
     if (!target) return;
     setSelectedCommunityId(id);
-    setDropdownOpen(false);
-    setActive("Resumen");
+    setActive((view) => view === "Comunidades" ? view : "Resumen");
     action(`Comunidad abierta: ${target.name}`);
-  }
-
-  function handleReturnToHub() {
-    setSelectedCommunityId(null);
-    setDropdownOpen(false);
   }
 
   function handleAddOwnerToCurrentCommunity(newOwner: OwnerModel) {
@@ -257,18 +251,10 @@ export function Dashboard() {
       // ignore
     }
     setShowAddCommunityModal(false);
-    handleSelectCommunity(newComm.id);
+    setSelectedCommunityId(newComm.id);
+    setActive((view) => view === "Comunidades" ? view : "Resumen");
     action(`Comunidad "${newComm.name}" creada con ${initialOwners.length} propietarios de ejemplo`);
   }
-
-  // Close dropdown on escape key
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setDropdownOpen(false);
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
 
   // If no community is selected yet (or user returned to the list), render the Community Selector Hub
   if (!currentCommunity) {
@@ -455,46 +441,13 @@ export function Dashboard() {
   return (
     <div className="app-shell">
       <aside className={`sidebar ${sidebar ? "is-open" : ""}`}>
-        <div
-          className="brand"
-          style={{ cursor: "pointer" }}
-          onClick={handleReturnToHub}
-          title="Volver a la selección de comunidades"
-        >
+        <div className="brand">
           <span className="brand-mark">
             <Icon name="building" size={22} />
           </span>
           <span>
             Finca<span>Flow</span>
           </span>
-        </div>
-
-        {/* Botón de acceso directo para cambiar de comunidad */}
-        <div style={{ padding: "0 14px 12px" }}>
-          <button
-            type="button"
-            className="switch-community-btn"
-            style={{
-              width: "100%",
-              justifyContent: "space-between",
-              padding: "8px 10px",
-              background: "#163c2c",
-              border: "1px solid rgba(255,255,255,0.12)",
-              color: "#e6f2eb",
-              borderRadius: "8px",
-              fontSize: "11px",
-              fontWeight: 600,
-              margin: 0,
-            }}
-            onClick={handleReturnToHub}
-            title="Ver todas las comunidades"
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <Icon name="building" size={14} />
-              <span>Cambiar comunidad</span>
-            </span>
-            <span style={{ fontSize: "10px", opacity: 0.7 }}>◀ Salir</span>
-          </button>
         </div>
 
         <div className="workspace-label">
@@ -545,116 +498,12 @@ export function Dashboard() {
             <Icon name="menu" />
           </button>
 
-          {/* Selector de Comunidades Interactivo */}
           <div className="community-picker">
             <small>Comunidad activa</small>
-            <button
-              id="community-picker-btn"
-              className={`community-picker-btn ${dropdownOpen ? "is-open" : ""}`}
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              aria-label="Seleccionar comunidad activa"
-              aria-haspopup="true"
-              aria-expanded={dropdownOpen}
-            >
-              <span
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  backgroundColor: currentCommunity.avatarBg,
-                  display: "inline-block",
-                }}
-              />
-              <span>{currentCommunity.name}</span>
-              <span className="chevron">⌄</span>
-            </button>
-
-            {dropdownOpen && (
-              <>
-                <div
-                  className="community-dropdown-backdrop"
-                  onClick={() => setDropdownOpen(false)}
-                />
-                <div className="community-dropdown" role="menu" id="community-selector-menu">
-                  <div className="community-dropdown-header">
-                    <span>Comunidades ({communities.length})</span>
-                    <span style={{ color: "#257454", fontWeight: 700 }}>
-                      Activa: {currentCommunity.name.split(" ")[0]}
-                    </span>
-                  </div>
-
-                  <div className="community-dropdown-list">
-                    {communities.map((comm) => {
-                      const isSelected = comm.id === currentCommunity.id;
-                      return (
-                        <button
-                          key={comm.id}
-                          id={`dropdown-community-${comm.id}`}
-                          className={`community-dropdown-item ${
-                            isSelected ? "is-selected" : ""
-                          }`}
-                          onClick={() => handleSelectCommunity(comm.id)}
-                        >
-                          <div
-                            className="community-dropdown-avatar"
-                            style={{ background: comm.avatarBg }}
-                          >
-                            {comm.avatarInitials}
-                          </div>
-                          <div className="community-dropdown-info">
-                            <strong>{comm.name}</strong>
-                            <small>
-                              {comm.location} · {comm.portals} portales
-                            </small>
-                            <span>
-                              {comm.totalUnits} viviendas · {comm.pendingPaymentsCount} pdtes.
-                            </span>
-                          </div>
-                          {isSelected && (
-                            <span className="community-dropdown-badge">Activa</span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="community-dropdown-footer">
-                    <button
-                      id="dropdown-view-all-communities"
-                      onClick={() => {
-                        setDropdownOpen(false);
-                        setActive("Comunidades");
-                      }}
-                    >
-                      <Icon name="building" size={13} />
-                      Ver todas
-                    </button>
-                    <button
-                      id="dropdown-new-community-btn"
-                      onClick={() => {
-                        setDropdownOpen(false);
-                        setShowAddCommunityModal(true);
-                      }}
-                    >
-                      <Icon name="plus" size={13} />
-                      Nueva comunidad
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
+            <strong>{currentCommunity.name}</strong>
           </div>
 
           <div className="header-tools">
-            <button
-              id="header-change-community-btn"
-              className="switch-community-btn"
-              onClick={handleReturnToHub}
-              title="Volver al selector de comunidades"
-            >
-              <Icon name="grid" size={13} />
-              <span>Cambiar comunidad</span>
-            </button>
             <label className="search">
               <Icon name="search" size={18} />
               <input
@@ -689,8 +538,6 @@ export function Dashboard() {
               <section className="welcome">
                 <div>
                   <p>VIERNES, 12 DE SEPTIEMBRE</p>
-                  <h1>Buenos días, Jonatan</h1>
-                  <span>Aquí tienes el resumen de {currentCommunity.name}.</span>
                 </div>
                 <button
                   className="primary"
@@ -1183,17 +1030,22 @@ function ModuleView({
           {communities.map((comm) => {
             const isSelected = comm.id === currentCommunity.id;
             return (
-              <article
+              <button
+                type="button"
+                id={`activate-community-${comm.id}`}
+                aria-label={`Seleccionar ${comm.name}`}
+                aria-pressed={isSelected}
+                onClick={() => onSelectCommunity(comm.id)}
                 key={comm.id}
                 className={`community-card ${isSelected ? "featured" : ""}`}
-                style={
-                  isSelected
+                style={{ textAlign: "left", cursor: "pointer", font: "inherit", ...
+                  (isSelected
                     ? {
                         borderColor: "#257454",
                         boxShadow: "0 8px 24px rgba(37,116,84,0.12)",
                       }
-                    : {}
-                }
+                    : {})
+                }}
               >
                 <div className="community-cover" style={{ background: comm.gradient }}>
                   <Icon name="building" size={35} />
@@ -1241,25 +1093,13 @@ function ModuleView({
                     </span>
                   </div>
                   <div style={{ marginTop: "14px" }}>
-                    {isSelected ? (
-                      <button
-                        style={{ color: "#257454", fontWeight: 800 }}
-                        onClick={() => notify(`Ya estás gestionando ${comm.name}`)}
-                      >
-                        Gestionando actualmente <Icon name="check" size={15} />
-                      </button>
-                    ) : (
-                      <button
-                        id={`activate-community-${comm.id}`}
-                        style={{ color: "#16785f", fontWeight: 800 }}
-                        onClick={() => onSelectCommunity(comm.id)}
-                      >
-                        Seleccionar comunidad <Icon name="arrow" size={15} />
-                      </button>
-                    )}
+                    <span style={{ color: "#16785f", fontWeight: 800 }}>
+                      {isSelected ? "Gestionando actualmente" : "Seleccionar comunidad"}
+                      <Icon name={isSelected ? "check" : "arrow"} size={15} />
+                    </span>
                   </div>
                 </div>
-              </article>
+              </button>
             );
           })}
 
