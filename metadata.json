@@ -1,0 +1,6 @@
+{
+  "name": "FincaFlow — Gestor de Comunidades",
+  "description": "Plataforma web multi-comunidad para administradores de fincas y gestorías con panel centralizado, comunidades, propietarios, comunicaciones, documentos y juntas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
