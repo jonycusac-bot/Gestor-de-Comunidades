@@ -1,31 +1,34 @@
-# Gestor de Comunidades
+# Gestor de Comunidades / FincaFlow
 
-Plataforma web multi-comunidad para administradores de fincas y gestorías.
+Aplicación para administradores de fincas con varias comunidades. La comunidad piloto es Terrazas de Bel Air.
 
-## Objetivo
-Crear un producto comercializable que permita gestionar múltiples comunidades desde un único panel y ofrezca a cada comunidad un portal privado para sus propietarios/residentes.
+**Para retomar el proyecto con cualquier agente, empieza por [docs/CONTINUIDAD.md](docs/CONTINUIDAD.md).** Ese archivo distingue las decisiones del producto de lo que ya funciona en el código. Revisa también el último commit de `main` antes de cambiar nada.
 
-## Comunidad piloto
-**Terrazas de Bel Air**
+## Versión actual
 
-## Estado
-Demo comercial navegable y responsive con datos ficticios, operaciones de ejemplo y modelo de datos multi-comunidad.
+- React 19, TypeScript y Vite para la interfaz; Express en `server.ts` para API y servidor de desarrollo.
+- `src/App.tsx` monta la autenticación y el panel.
+- `src/components/dashboard.tsx` contiene el selector y las vistas de gestión.
+- `src/data/communitiesData.ts` aporta datos ficticios de demostración.
+- Prisma tiene un esquema de diseño, pero la demo no persiste las comunidades en PostgreSQL: usa `localStorage` del navegador.
 
-## Stack inicial
-- Next.js + React + TypeScript.
-- PostgreSQL + Prisma ORM.
-- CSS propio, sin dependencia de una librería visual.
+## Arranque local
 
-## Puesta en marcha
-1. Copiar `.env.example` como `.env` y configurar PostgreSQL.
-2. Ejecutar `npm install`.
-3. Ejecutar `npm run db:generate` y `npm run db:push`.
-4. Ejecutar `npm run dev` y abrir `http://localhost:3000`.
+Con Node.js y npm instalados:
 
-## Publicación gratuita de la demo
-La aplicación genera una exportación estática en la carpeta `out` mediante `npm run build`. Esa carpeta puede publicarse directamente en Cloudflare Pages sin servidor ni base de datos. La demo no contiene datos personales reales.
+```bash
+npm install
+npm run dev
+```
 
-Documentación:
-- `docs/ESPECIFICACION_FUNCIONAL.md`
-- `docs/DECISIONES_DOCUMENTOS_Y_JUNTAS.md`
-- `docs/ESTADO_Y_PROXIMOS_PASOS.md`
+Abre `http://localhost:3000`, pulsa **Ver demostración** y selecciona una comunidad. `npm run lint` comprueba TypeScript y `npm run build` genera el paquete de producción.
+
+El acceso real usa Supabase Auth. Configura solo los valores necesarios mediante variables de entorno locales; nunca subas contraseñas, tokens o archivos `.env` a GitHub.
+
+## Documentación
+
+- [Continuidad para otro agente](docs/CONTINUIDAD.md)
+- [Especificación funcional](docs/ESPECIFICACION_FUNCIONAL.md)
+- [Decisiones sobre documentos y juntas](docs/DECISIONES_DOCUMENTOS_Y_JUNTAS.md)
+
+Los documentos de 2026-09-12 describen decisiones y una base técnica anterior. Para el comportamiento actual, manda el código de `main`.
