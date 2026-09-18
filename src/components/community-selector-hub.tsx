@@ -62,19 +62,6 @@ export function CommunitySelectorHub({
 
       {/* Contenido principal */}
       <main className="hub-container">
-        {/* Introducción al selector de comunidades */}
-        <section className="hub-hero">
-          <div className="hub-hero-intro">
-            <span className="hub-badge">PORTAL MULTI-COMUNIDAD</span>
-            <h1>Selecciona una comunidad para gestionar</h1>
-            <p>
-              Elige el edificio o urbanización sobre el que deseas trabajar para acceder
-              a su menú de propietarios, actas, juntas, contabilidad y comunicaciones.
-            </p>
-          </div>
-
-        </section>
-
         {/* Barra de búsqueda y botón añadir */}
         <div className="hub-actions-bar">
           <div className="hub-search-wrapper">

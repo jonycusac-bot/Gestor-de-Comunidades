@@ -6,7 +6,7 @@ import { OwnerModel, CommunityModel } from "../data/communitiesData";
 
 interface OwnersManagerProps {
   currentCommunity: CommunityModel;
-  onAddOwner: (newOwner: OwnerModel) => void;
+  onAddOwner: (newOwner: OwnerModel) => boolean;
   onAddExampleOwners: () => void;
   notify: (msg: string) => void;
 }
@@ -80,13 +80,6 @@ export function OwnersView({
       statusFilter === "todos" ? true : o.payment === statusFilter;
 
     return matchesQuery && matchesStatus;
-  }).sort((a, b) => {
-    const portalNumber = (home: string) => {
-      const match = home.match(/(?:bloque|portal)\s*(\d+)/i);
-      return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER;
-    };
-    return portalNumber(a.home) - portalNumber(b.home)
-      || a.home.localeCompare(b.home, "es", { numeric: true, sensitivity: "base" });
   });
 
   const upToDateCount = currentCommunity.owners.filter(
@@ -99,7 +92,7 @@ export function OwnersView({
   return (
     <div>
       {/* Barra de herramientas y filtros */}
-      <div className="module-toolbar">
+      <div className="module-toolbar owners-toolbar">
         <label className="module-search">
           <Icon name="search" size={17} />
           <input
@@ -110,7 +103,7 @@ export function OwnersView({
           />
         </label>
 
-        <div style={{ display: "flex", gap: "8px" }}>
+        <div className="owners-filter-buttons">
           <button
             id="filter-all-owners"
             style={{
@@ -149,13 +142,12 @@ export function OwnersView({
           </button>
         </div>
 
-        <div style={{ display: "flex", gap: "8px", marginLeft: "auto" }}>
+        <div className="owners-action-buttons">
           <button
             id="btn-add-sample-owners"
             className="owner-action-btn"
             onClick={() => {
               onAddExampleOwners();
-              notify(`Generados nuevos propietarios de ejemplo para ${currentCommunity.name}`);
             }}
             title="Añadir lote de propietarios de ejemplo"
           >
@@ -277,9 +269,10 @@ export function OwnersView({
           currentCommunity={currentCommunity}
           onClose={() => setShowModal(false)}
           onCreate={(owner) => {
-            onAddOwner(owner);
-            setShowModal(false);
-            notify(`Propietario ${owner.name} añadido a ${currentCommunity.name}`);
+            if (onAddOwner(owner)) {
+              setShowModal(false);
+              notify(`Propietario ${owner.name} añadido a ${currentCommunity.name}`);
+            }
           }}
         />
       )}

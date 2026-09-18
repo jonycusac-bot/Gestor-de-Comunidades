@@ -9,13 +9,33 @@ import { CommunitySelectorHub } from "./community-selector-hub";
 const nav = [
   ["building", "Comunidades"],
   ["users", "Propietarios"],
-  ["message", "Comunicaciones"],
   ["bell", "Avisos y noticias"],
   ["folder", "Documentos"],
   ["calendar", "Juntas"],
+  ["message", "Comunicaciones"],
   ["wallet", "Economía"],
   ["grid", "Resumen"],
 ] as const;
+
+const communitiesStorageKey = "fincaflow-custom-communities";
+const activeCommunityStorageKey = "fincaflow-active-community";
+
+function normalizeEmail(email: string) {
+  return email.trim().toLocaleLowerCase("es-ES");
+}
+
+function withOwnerStats(community: CommunityModel, owners: OwnerModel[]): CommunityModel {
+  const pendingPaymentsCount = owners.filter((owner) => owner.payment === "Pendiente").length;
+  return {
+    ...community,
+    owners,
+    totalOwners: owners.length,
+    pendingPaymentsCount,
+    pendingPaymentsPercent: owners.length
+      ? `${((pendingPaymentsCount / owners.length) * 100).toFixed(1).replace(".0", "")}%`
+      : "0%",
+  };
+}
 
 export function Dashboard() {
   const [active, setActive] = useState<string>("Resumen");
@@ -25,9 +45,10 @@ export function Dashboard() {
   // Communities state
   const [communities, setCommunities] = useState<CommunityModel[]>(() => {
     try {
-      const saved = localStorage.getItem("fincaflow-custom-communities");
+      const saved = localStorage.getItem(communitiesStorageKey);
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch {
       // ignore
@@ -35,15 +56,17 @@ export function Dashboard() {
     return initialCommunitiesList;
   });
 
-  // Each entry starts at the community selector.
+  // Selected community: null means the user is at the initial main selection screen
+  // Cada acceso empieza en el selector de comunidades, que es la página principal de la demo.
   const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(null);
 
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showAddCommunityModal, setShowAddCommunityModal] = useState(false);
   const [communityModalOwnerMode, setCommunityModalOwnerMode] = useState<"sample" | "manual">("sample");
 
   // Get current active community object if one is chosen
   const currentCommunity =
-    communities.find((c) => c.id === selectedCommunityId);
+    communities.find((c) => c.id === selectedCommunityId) || communities[0];
 
   function action(message: string) {
     setNotice(message);
@@ -51,37 +74,45 @@ export function Dashboard() {
   }
 
   function handleSelectCommunity(id: string) {
-    const target = communities.find((c) => c.id === id);
-    if (!target) return;
     setSelectedCommunityId(id);
-    setActive((view) => view === "Comunidades" ? view : "Resumen");
-    action(`Comunidad abierta: ${target.name}`);
+    setDropdownOpen(false);
+    setActive("Resumen");
+    const target = communities.find((c) => c.id === id);
+    if (target) {
+      action(`Comunidad abierta: ${target.name}`);
+    }
+  }
+
+  function handleReturnToHub() {
+    setSelectedCommunityId(null);
+    setDropdownOpen(false);
   }
 
   function handleAddOwnerToCurrentCommunity(newOwner: OwnerModel) {
-    if (!currentCommunity) return;
+    const email = normalizeEmail(newOwner.email);
+    if (currentCommunity.owners.some((owner) => normalizeEmail(owner.email) === email)) {
+      action("Ya existe un propietario con ese correo en esta comunidad");
+      return false;
+    }
+
     const updatedCommunities = communities.map((comm) => {
       if (comm.id === currentCommunity.id) {
         const nextOwners = [newOwner, ...comm.owners];
-        return {
-          ...comm,
-          owners: nextOwners,
-          totalOwners: nextOwners.length,
-        };
+        return withOwnerStats(comm, nextOwners);
       }
       return comm;
     });
 
     setCommunities(updatedCommunities);
     try {
-      localStorage.setItem("fincaflow-custom-communities", JSON.stringify(updatedCommunities));
+      localStorage.setItem(communitiesStorageKey, JSON.stringify(updatedCommunities));
     } catch {
       // ignore
     }
+    return true;
   }
 
   function handleAddSampleOwnersToCurrentCommunity() {
-    if (!currentCommunity) return;
     const nextSampleOwners: OwnerModel[] = sampleOwnersBank.map((s, idx) => {
       const initials = s.name
         .split(" ")
@@ -106,24 +137,21 @@ export function Dashboard() {
     const updatedCommunities = communities.map((comm) => {
       if (comm.id === currentCommunity.id) {
         // avoid duplicate emails
-        const existingEmails = new Set(comm.owners.map((o) => o.email));
-        const toAdd = nextSampleOwners.filter((o) => !existingEmails.has(o.email));
-        const finalOwners = toAdd.length > 0 ? [...toAdd, ...comm.owners] : [...nextSampleOwners, ...comm.owners];
-        return {
-          ...comm,
-          owners: finalOwners,
-          totalOwners: finalOwners.length,
-        };
+        const existingEmails = new Set(comm.owners.map((owner) => normalizeEmail(owner.email)));
+        const toAdd = nextSampleOwners.filter((owner) => !existingEmails.has(normalizeEmail(owner.email)));
+        return withOwnerStats(comm, [...toAdd, ...comm.owners]);
       }
       return comm;
     });
 
     setCommunities(updatedCommunities);
     try {
-      localStorage.setItem("fincaflow-custom-communities", JSON.stringify(updatedCommunities));
+      localStorage.setItem(communitiesStorageKey, JSON.stringify(updatedCommunities));
     } catch {
       // ignore
     }
+    const addedCount = updatedCommunities.find((community) => community.id === currentCommunity.id)!.owners.length - currentCommunity.owners.length;
+    action(addedCount ? `${addedCount} propietarios de ejemplo añadidos` : "Los propietarios de ejemplo ya están cargados");
   }
 
   function handleCreateCommunity(event: React.FormEvent<HTMLFormElement>) {
@@ -133,10 +161,15 @@ export function Dashboard() {
     if (!name) return;
 
     const location = String(form.get("location") || "Málaga").trim();
-    const portals = Number(form.get("portals") || 2);
-    const totalUnits = Number(form.get("totalUnits") || 32);
+    const portals = Math.max(1, Number(form.get("portals") || 2));
+    const totalUnits = Math.max(1, Number(form.get("totalUnits") || 32));
     const cif = String(form.get("cif") || `H-${Math.floor(10000000 + Math.random() * 90000000)}`);
     const ownerMode = String(form.get("ownerMode") || "sample");
+
+    if (communities.some((community) => community.name.trim().toLocaleLowerCase("es-ES") === name.toLocaleLowerCase("es-ES") && community.location.trim().toLocaleLowerCase("es-ES") === location.toLocaleLowerCase("es-ES"))) {
+      action("Ya existe una comunidad con ese nombre y ubicación");
+      return;
+    }
 
     let initialOwners: OwnerModel[] = [];
 
@@ -246,18 +279,26 @@ export function Dashboard() {
     const next = [...communities, newComm];
     setCommunities(next);
     try {
-      localStorage.setItem("fincaflow-custom-communities", JSON.stringify(next));
+      localStorage.setItem(communitiesStorageKey, JSON.stringify(next));
     } catch {
       // ignore
     }
     setShowAddCommunityModal(false);
-    setSelectedCommunityId(newComm.id);
-    setActive((view) => view === "Comunidades" ? view : "Resumen");
+    handleSelectCommunity(newComm.id);
     action(`Comunidad "${newComm.name}" creada con ${initialOwners.length} propietarios de ejemplo`);
   }
 
+  // Close dropdown on escape key
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setDropdownOpen(false);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   // If no community is selected yet (or user returned to the list), render the Community Selector Hub
-  if (!currentCommunity) {
+  if (!selectedCommunityId) {
     return (
       <>
         <CommunitySelectorHub
@@ -355,7 +396,7 @@ export function Dashboard() {
                         cursor: "pointer",
                       }}
                     >
-                      Generar 6 propietarios de ejemplo
+                      Generar 5 propietarios de ejemplo
                     </button>
                     <button
                       type="button"
@@ -381,7 +422,7 @@ export function Dashboard() {
 
                   {communityModalOwnerMode === "sample" ? (
                     <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", margin: "4px 0 12px", background: "#f8fafc", padding: "10px 12px", borderRadius: "8px" }}>
-                      💡 Se autogenerarán 6 propietarios realistas (con DNI, teléfonos, correos y coeficientes de participación) para que puedas probar la comunidad de inmediato.
+                      💡 Se autogenerarán 5 propietarios realistas (con DNI, teléfonos, correos y coeficientes de participación) para que puedas probar la comunidad de inmediato.
                     </p>
                   ) : (
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", background: "#f8fafc", padding: "12px", borderRadius: "8px", marginBottom: "12px" }}>
@@ -441,13 +482,46 @@ export function Dashboard() {
   return (
     <div className="app-shell">
       <aside className={`sidebar ${sidebar ? "is-open" : ""}`}>
-        <div className="brand">
+        <div
+          className="brand"
+          style={{ cursor: "pointer" }}
+          onClick={handleReturnToHub}
+          title="Volver a la selección de comunidades"
+        >
           <span className="brand-mark">
             <Icon name="building" size={22} />
           </span>
           <span>
             Finca<span>Flow</span>
           </span>
+        </div>
+
+        {/* Botón de acceso directo para cambiar de comunidad */}
+        <div style={{ padding: "0 14px 12px" }}>
+          <button
+            type="button"
+            className="switch-community-btn"
+            style={{
+              width: "100%",
+              justifyContent: "space-between",
+              padding: "8px 10px",
+              background: "#163c2c",
+              border: "1px solid rgba(255,255,255,0.12)",
+              color: "#e6f2eb",
+              borderRadius: "8px",
+              fontSize: "11px",
+              fontWeight: 600,
+              margin: 0,
+            }}
+            onClick={handleReturnToHub}
+            title="Ver todas las comunidades"
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <Icon name="building" size={14} />
+              <span>Cambiar comunidad</span>
+            </span>
+            <span style={{ fontSize: "10px", opacity: 0.7 }}>◀ Salir</span>
+          </button>
         </div>
 
         <div className="workspace-label">
@@ -466,7 +540,7 @@ export function Dashboard() {
             >
               <Icon name={icon} />
               <span>{label}</span>
-              {label === "Comunicaciones" && (
+              {label === "Avisos y noticias" && (
                 <b>{currentCommunity.openCommunications}</b>
               )}
             </button>
@@ -498,12 +572,116 @@ export function Dashboard() {
             <Icon name="menu" />
           </button>
 
+          {/* Selector de Comunidades Interactivo */}
           <div className="community-picker">
             <small>Comunidad activa</small>
-            <strong>{currentCommunity.name}</strong>
+            <button
+              id="community-picker-btn"
+              className={`community-picker-btn ${dropdownOpen ? "is-open" : ""}`}
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              aria-label="Seleccionar comunidad activa"
+              aria-haspopup="true"
+              aria-expanded={dropdownOpen}
+            >
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  backgroundColor: currentCommunity.avatarBg,
+                  display: "inline-block",
+                }}
+              />
+              <span>{currentCommunity.name}</span>
+              <span className="chevron">⌄</span>
+            </button>
+
+            {dropdownOpen && (
+              <>
+                <div
+                  className="community-dropdown-backdrop"
+                  onClick={() => setDropdownOpen(false)}
+                />
+                <div className="community-dropdown" role="menu" id="community-selector-menu">
+                  <div className="community-dropdown-header">
+                    <span>Comunidades ({communities.length})</span>
+                    <span style={{ color: "#257454", fontWeight: 700 }}>
+                      Activa: {currentCommunity.name.split(" ")[0]}
+                    </span>
+                  </div>
+
+                  <div className="community-dropdown-list">
+                    {communities.map((comm) => {
+                      const isSelected = comm.id === currentCommunity.id;
+                      return (
+                        <button
+                          key={comm.id}
+                          id={`dropdown-community-${comm.id}`}
+                          className={`community-dropdown-item ${
+                            isSelected ? "is-selected" : ""
+                          }`}
+                          onClick={() => handleSelectCommunity(comm.id)}
+                        >
+                          <div
+                            className="community-dropdown-avatar"
+                            style={{ background: comm.avatarBg }}
+                          >
+                            {comm.avatarInitials}
+                          </div>
+                          <div className="community-dropdown-info">
+                            <strong>{comm.name}</strong>
+                            <small>
+                              {comm.location} · {comm.portals} portales
+                            </small>
+                            <span>
+                              {comm.totalUnits} viviendas · {comm.pendingPaymentsCount} pdtes.
+                            </span>
+                          </div>
+                          {isSelected && (
+                            <span className="community-dropdown-badge">Activa</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="community-dropdown-footer">
+                    <button
+                      id="dropdown-view-all-communities"
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        setActive("Comunidades");
+                      }}
+                    >
+                      <Icon name="building" size={13} />
+                      Ver todas
+                    </button>
+                    <button
+                      id="dropdown-new-community-btn"
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        setShowAddCommunityModal(true);
+                      }}
+                    >
+                      <Icon name="plus" size={13} />
+                      Nueva comunidad
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="header-tools">
+            <button
+              id="header-change-community-btn"
+              className="switch-community-btn"
+              onClick={handleReturnToHub}
+              title="Volver al selector de comunidades"
+            >
+              <Icon name="grid" size={13} />
+              <span>Cambiar comunidad</span>
+            </button>
             <label className="search">
               <Icon name="search" size={18} />
               <input
@@ -512,7 +690,7 @@ export function Dashboard() {
             </label>
             <button
               className="round"
-              onClick={() => action("Notificaciones de la comunidad")}
+              onClick={() => setActive("Avisos y noticias")}
               aria-label="Ver avisos"
             >
               <Icon name="bell" size={19} />
@@ -537,7 +715,9 @@ export function Dashboard() {
             <>
               <section className="welcome">
                 <div>
-                  <p>VIERNES, 12 DE SEPTIEMBRE</p>
+                  <p>RESUMEN DE COMUNIDAD</p>
+                  <h1>{currentCommunity.name}</h1>
+                  <span>Información principal y actividad reciente de la comunidad.</span>
                 </div>
                 <button
                   className="primary"
@@ -566,7 +746,7 @@ export function Dashboard() {
                     <Icon name="message" />
                   </div>
                   <div>
-                    <small>Comunicaciones abiertas</small>
+                    <small>Avisos activos</small>
                     <strong>{currentCommunity.openCommunications}</strong>
                     <span>
                       <em>2 nuevas</em> esta semana
@@ -598,14 +778,14 @@ export function Dashboard() {
               </section>
 
               <div className="dashboard-grid">
-                {/* Comunicaciones de la comunidad activa */}
+                {/* Avisos de la comunidad activa */}
                 <section className="panel communications">
                   <div className="panel-head">
                     <div>
-                      <h2>Comunicaciones recientes</h2>
-                      <p>Consultas, quejas, incidencias y sugerencias</p>
+                      <h2>Avisos recientes</h2>
+                      <p>Información pendiente de revisar</p>
                     </div>
-                    <button onClick={() => setActive("Comunicaciones")}>
+                    <button onClick={() => setActive("Avisos y noticias")}>
                       Ver todas <Icon name="arrow" size={15} />
                     </button>
                   </div>
@@ -834,7 +1014,7 @@ export function Dashboard() {
                     cursor: "pointer",
                   }}
                 >
-                  Generar 6 propietarios de ejemplo
+                  Generar 5 propietarios de ejemplo
                 </button>
                 <button
                   type="button"
@@ -860,7 +1040,7 @@ export function Dashboard() {
 
               {communityModalOwnerMode === "sample" ? (
                 <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", margin: "4px 0 12px", background: "#f8fafc", padding: "10px 12px", borderRadius: "8px" }}>
-                  💡 Se autogenerarán 6 propietarios realistas (con DNI, teléfonos, correos y coeficientes de participación) para que puedas probar la comunidad de inmediato.
+                  💡 Se autogenerarán 5 propietarios realistas (con DNI, teléfonos, correos y coeficientes de participación) para que puedas probar la comunidad de inmediato.
                 </p>
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", background: "#f8fafc", padding: "12px", borderRadius: "8px", marginBottom: "12px" }}>
@@ -924,7 +1104,7 @@ function ModuleView({
   communities: CommunityModel[];
   onSelectCommunity: (id: string) => void;
   onOpenAddModal: () => void;
-  onAddOwner: (owner: OwnerModel) => void;
+  onAddOwner: (owner: OwnerModel) => boolean;
   onAddSampleOwners: () => void;
   notify: (message: string) => void;
 }) {
@@ -963,14 +1143,23 @@ function ModuleView({
     ];
     setDemoCommunications(next);
     setShowForm(false);
-    notify("Comunicación registrada correctamente");
+    notify("Aviso registrado correctamente");
+  }
+
+  function sendEmailCommunication(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const subject = String(form.get("subject") || "Comunicado de la comunidad").trim();
+    const recipients = currentCommunity.owners.filter((owner) => owner.email.trim()).length;
+    notify(`Comunicado “${subject}” preparado para ${recipients} propietarios`);
+    event.currentTarget.reset();
   }
 
   const title = active === "Avisos y noticias" ? "Avisos y noticias" : active;
   const subtitles: Record<string, string> = {
     Comunidades: "Gestiona las comunidades asignadas y su configuración",
     Propietarios: `Propietarios, viviendas y pagos de ${currentCommunity.name}`,
-    Comunicaciones: `Consultas, quejas, incidencias y sugerencias en ${currentCommunity.name}`,
+    Comunicaciones: `Envía comunicados por correo a los propietarios de ${currentCommunity.name}`,
     Documentos: `Biblioteca documental de ${currentCommunity.name}`,
     Juntas: `Convocatorias, orden del día y actas de ${currentCommunity.name}`,
     Economía: `Control económico y cuotas de ${currentCommunity.name}`,
@@ -987,7 +1176,8 @@ function ModuleView({
         </span>
         <button
           onClick={() => {
-            localStorage.clear();
+            localStorage.removeItem(communitiesStorageKey);
+            localStorage.removeItem(activeCommunityStorageKey);
             notify("Datos de demo restaurados");
             window.location.reload();
           }}
@@ -1002,14 +1192,14 @@ function ModuleView({
           <h1>{title}</h1>
           <span>{subtitles[active] || "Módulo en preparación"}</span>
         </div>
-        {active !== "Propietarios" && (
+        {active !== "Propietarios" && active !== "Comunicaciones" && (
           <button className="primary" onClick={() => setShowForm(true)}>
             <Icon name="plus" size={18} /> Nuevo
           </button>
         )}
       </div>
 
-      {active !== "Propietarios" && (
+      {active !== "Propietarios" && active !== "Comunicaciones" && (
         <div className="module-toolbar">
           <label className="module-search">
             <Icon name="search" size={17} />
@@ -1030,22 +1220,18 @@ function ModuleView({
           {communities.map((comm) => {
             const isSelected = comm.id === currentCommunity.id;
             return (
-              <button
-                type="button"
-                id={`activate-community-${comm.id}`}
-                aria-label={`Seleccionar ${comm.name}`}
-                aria-pressed={isSelected}
-                onClick={() => onSelectCommunity(comm.id)}
+              <article
                 key={comm.id}
                 className={`community-card ${isSelected ? "featured" : ""}`}
-                style={{ textAlign: "left", cursor: "pointer", font: "inherit", ...
-                  (isSelected
+                onClick={() => onSelectCommunity(comm.id)}
+                style={
+                  isSelected
                     ? {
                         borderColor: "#257454",
                         boxShadow: "0 8px 24px rgba(37,116,84,0.12)",
                       }
-                    : {})
-                }}
+                    : {}
+                }
               >
                 <div className="community-cover" style={{ background: comm.gradient }}>
                   <Icon name="building" size={35} />
@@ -1093,13 +1279,31 @@ function ModuleView({
                     </span>
                   </div>
                   <div style={{ marginTop: "14px" }}>
-                    <span style={{ color: "#16785f", fontWeight: 800 }}>
-                      {isSelected ? "Gestionando actualmente" : "Seleccionar comunidad"}
-                      <Icon name={isSelected ? "check" : "arrow"} size={15} />
-                    </span>
+                    {isSelected ? (
+                      <button
+                        style={{ color: "#257454", fontWeight: 800 }}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          notify(`Ya estás gestionando ${comm.name}`);
+                        }}
+                      >
+                        Gestionando actualmente <Icon name="check" size={15} />
+                      </button>
+                    ) : (
+                      <button
+                        id={`activate-community-${comm.id}`}
+                        style={{ color: "#16785f", fontWeight: 800 }}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onSelectCommunity(comm.id);
+                        }}
+                      >
+                        Seleccionar comunidad <Icon name="arrow" size={15} />
+                      </button>
+                    )}
                   </div>
                 </div>
-              </button>
+              </article>
             );
           })}
 
@@ -1123,8 +1327,41 @@ function ModuleView({
         />
       )}
 
-      {/* Comunicaciones de la comunidad activa */}
       {active === "Comunicaciones" && (
+        <form className="email-composer" onSubmit={sendEmailCommunication}>
+          <div className="email-composer-head">
+            <span className="stat-icon blue"><Icon name="message" size={22} /></span>
+            <div>
+              <h2>Enviar comunicado por correo</h2>
+              <p>Los correos se enviarán a los propietarios registrados en esta comunidad.</p>
+            </div>
+          </div>
+
+          <div className="email-recipients">
+            <span>PARA</span>
+            <strong>Todos los propietarios con correo electrónico</strong>
+            <b>{currentCommunity.owners.filter((owner) => owner.email.trim()).length} destinatarios</b>
+          </div>
+
+          <label>
+            Asunto
+            <input name="subject" required placeholder="Ej. Fumigación programada para el 6 de octubre" />
+          </label>
+          <label>
+            Mensaje
+            <textarea name="message" rows={7} required placeholder="Indica a los propietarios la información que necesitan conocer…" />
+          </label>
+          <div className="email-composer-footer">
+            <small>Modo demostración: el envío se simula y no se entrega ningún correo real.</small>
+            <button className="primary" type="submit">
+              <Icon name="message" size={16} /> Enviar comunicado
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Avisos de la comunidad activa */}
+      {active === "Avisos y noticias" && (
         <div className="data-panel">
           <div className="data-head communications-head">
             <span>Tipo</span>
@@ -1139,7 +1376,7 @@ function ModuleView({
               <button
                 className="data-row communications-row"
                 key={r.title + i}
-                onClick={() => notify(`Abriendo comunicación: ${r.title}`)}
+                onClick={() => notify(`Abriendo aviso: ${r.title}`)}
               >
                 <span>
                   <em className={`type ${r.tone}`}>{r.type}</em>
@@ -1192,7 +1429,7 @@ function ModuleView({
       )}
 
       {/* Módulos restantes */}
-      {!["Comunidades", "Propietarios", "Comunicaciones", "Documentos"].includes(
+      {!["Comunidades", "Propietarios", "Comunicaciones", "Avisos y noticias", "Documentos"].includes(
         active
       ) && (
         <div className="empty-module">
@@ -1230,7 +1467,7 @@ function ModuleView({
           <form
             className="modal"
             onSubmit={
-              active === "Comunicaciones"
+              active === "Avisos y noticias"
                 ? addCommunication
                 : (e) => {
                     e.preventDefault();
@@ -1246,8 +1483,8 @@ function ModuleView({
               <div>
                 <small>NUEVO REGISTRO EN {currentCommunity.name.toUpperCase()}</small>
                 <h2>
-                  {active === "Comunicaciones"
-                    ? "Nueva comunicación"
+                  {active === "Avisos y noticias"
+                    ? "Nuevo aviso"
                     : `Nuevo en ${title}`}
                 </h2>
               </div>
@@ -1255,7 +1492,7 @@ function ModuleView({
                 ×
               </button>
             </div>
-            {active === "Comunicaciones" && (
+            {active === "Avisos y noticias" && (
               <label>
                 Tipo
                 <select name="type">
