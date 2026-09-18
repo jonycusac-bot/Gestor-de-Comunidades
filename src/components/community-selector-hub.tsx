@@ -28,16 +28,6 @@ export function CommunitySelectorHub({
       c.cif.toLowerCase().includes(search.toLowerCase())
   );
 
-  const totalViviendas = communities.reduce((acc, c) => acc + (c.totalUnits || 0), 0);
-  const totalPropietarios = communities.reduce(
-    (acc, c) => acc + (c.owners?.length || c.totalOwners || 0),
-    0
-  );
-  const totalIncidencias = communities.reduce(
-    (acc, c) => acc + (c.openCommunications || 0),
-    0
-  );
-
   return (
     <div className="hub-page">
       {/* Barra superior de cabecera */}
@@ -72,7 +62,7 @@ export function CommunitySelectorHub({
 
       {/* Contenido principal */}
       <main className="hub-container">
-        {/* Banner de bienvenida y métricas globales */}
+        {/* Introducción al selector de comunidades */}
         <section className="hub-hero">
           <div className="hub-hero-intro">
             <span className="hub-badge">PORTAL MULTI-COMUNIDAD</span>
@@ -83,24 +73,6 @@ export function CommunitySelectorHub({
             </p>
           </div>
 
-          <div className="hub-stats-strip">
-            <div className="hub-stat-item">
-              <span>COMUNIDADES ACTIVAS</span>
-              <strong>{communities.length}</strong>
-            </div>
-            <div className="hub-stat-item">
-              <span>TOTAL INMUEBLES</span>
-              <strong>{totalViviendas}</strong>
-            </div>
-            <div className="hub-stat-item">
-              <span>CENSO PROPIETARIOS</span>
-              <strong>{totalPropietarios}</strong>
-            </div>
-            <div className="hub-stat-item">
-              <span>COMUNICACIONES</span>
-              <strong>{totalIncidencias}</strong>
-            </div>
-          </div>
         </section>
 
         {/* Barra de búsqueda y botón añadir */}
