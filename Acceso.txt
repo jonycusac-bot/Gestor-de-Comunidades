@@ -1,0 +1,3 @@
+Repositorio único: https://github.com/jonycusac-bot/Gestor-de-Comunidades, rama `main`.
+- Antes de cada tarea, obtener la versión más reciente y leer el último commit. No reconstruir la aplicación desde ZIP antiguos.
+- Para revisar sin publicar, ejecutar `npm install` (una vez), `npm run dev` y abrir `http://localhost:3000`.
