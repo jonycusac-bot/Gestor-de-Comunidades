@@ -34,9 +34,19 @@ Producto web comercial para administradores de fincas: gestionar varias comunida
 ## Siguiente trabajo útil
 
 1. Probar visualmente el flujo entrada → selector vacío de selección → comunidad → volver al selector, en escritorio y móvil.
-2. Convertir el censo piloto a 12 portales y hacer funcional el alta/importación Excel, con estructuras variables.
+2. Convertir el censo piloto a 12 portales, con estructuras variables de portal, planta y puerta.
 3. Completar el flujo gestor publica aviso/documento → propietario lo consulta, con datos demo y límites de acceso claros.
 4. Solo después, conectar almacenamiento real, políticas RLS y avisos por correo; mantener los correos desactivados en la demo.
+
+## Actualización — 21/09/2026
+
+- La alta de comunidades ya permite importar propietarios y viviendas desde un archivo `.xlsx` en `dashboard.tsx`, usando la pestaña `Propietarios` y las columnas: Portal / Bloque, Planta, Puerta, Nombre del propietario, DNI/NIF, Email, Teléfono, Coeficiente de propiedad (%), Estado de pago y Observaciones.
+- La aplicación valida las columnas obligatorias, las filas incompletas y los correos repetidos. A partir del archivo calcula automáticamente portales y viviendas, y guarda el resultado solo en `localStorage` como el resto de la demo.
+- Las plantillas ficticias quedan en `docs/plantillas/`: `plantilla_alta_comunidad.xlsx` y `ejemplo_comunidad_8_portales.xlsx`. El ejemplo contiene 64 viviendas de 8 portales y coeficientes que suman el 100%.
+- Se añadió la dependencia de frontend `xlsx`. `npm run lint` y `npm run build` han pasado. La compilación avisa de un paquete JavaScript de más de 500 kB; es una mejora de rendimiento pendiente, no un error funcional.
+- La tabla general de propietarios no muestra DNI ni coeficiente de participación; ambos datos quedan reservados para la ficha individual del propietario.
+- Se retiró la vista Resumen. Al abrir una comunidad, el panel empieza en Comunidades. El selector inicial muestra al final un globo con todos los avisos y noticias y, al abrirlo, los agrupa por comunidad.
+- Desde Comunidades se puede dar de baja una comunidad de la demo. La acción elimina sus datos locales y exige dos confirmaciones consecutivas.
 
 ## Mensaje breve para OmniRoute u otro agente
 

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import * as XLSX from "xlsx";
 import { Icon } from "./icon";
 import { initialCommunitiesList, CommunityModel, OwnerModel } from "../data/communitiesData";
 import { OwnersView, sampleOwnersBank } from "./owners-view";
@@ -14,7 +15,6 @@ const nav = [
   ["calendar", "Juntas"],
   ["message", "Comunicaciones"],
   ["wallet", "Economía"],
-  ["grid", "Resumen"],
 ] as const;
 
 const communitiesStorageKey = "fincaflow-custom-communities";
@@ -38,7 +38,7 @@ function withOwnerStats(community: CommunityModel, owners: OwnerModel[]): Commun
 }
 
 export function Dashboard() {
-  const [active, setActive] = useState<string>("Resumen");
+  const [active, setActive] = useState<string>("Comunidades");
   const [sidebar, setSidebar] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -62,7 +62,11 @@ export function Dashboard() {
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showAddCommunityModal, setShowAddCommunityModal] = useState(false);
-  const [communityModalOwnerMode, setCommunityModalOwnerMode] = useState<"sample" | "manual">("sample");
+  const [communityModalOwnerMode, setCommunityModalOwnerMode] = useState<"sample" | "manual" | "import">("sample");
+  const [importedOwners, setImportedOwners] = useState<OwnerModel[] | null>(null);
+  const [importedCommunityCounts, setImportedCommunityCounts] = useState<{ portals: number; units: number } | null>(null);
+  const [communityPendingDeletion, setCommunityPendingDeletion] = useState<CommunityModel | null>(null);
+  const [communityDeletionConfirmed, setCommunityDeletionConfirmed] = useState(false);
 
   // Get current active community object if one is chosen
   const currentCommunity =
@@ -76,7 +80,7 @@ export function Dashboard() {
   function handleSelectCommunity(id: string) {
     setSelectedCommunityId(id);
     setDropdownOpen(false);
-    setActive("Resumen");
+    setActive("Comunidades");
     const target = communities.find((c) => c.id === id);
     if (target) {
       action(`Comunidad abierta: ${target.name}`);
@@ -86,6 +90,29 @@ export function Dashboard() {
   function handleReturnToHub() {
     setSelectedCommunityId(null);
     setDropdownOpen(false);
+  }
+
+  function requestCommunityDeletion(id: string) {
+    const target = communities.find((community) => community.id === id);
+    if (target) {
+      setCommunityDeletionConfirmed(false);
+      setCommunityPendingDeletion(target);
+    }
+  }
+
+  function confirmCommunityDeletion() {
+    if (!communityPendingDeletion) return;
+    const updatedCommunities = communities.filter((community) => community.id !== communityPendingDeletion.id);
+    setCommunities(updatedCommunities);
+    try {
+      localStorage.setItem(communitiesStorageKey, JSON.stringify(updatedCommunities));
+    } catch {
+      // ignore
+    }
+    setCommunityPendingDeletion(null);
+    setCommunityDeletionConfirmed(false);
+    setSelectedCommunityId(null);
+    action(`Comunidad dada de baja: ${communityPendingDeletion.name}`);
   }
 
   function handleAddOwnerToCurrentCommunity(newOwner: OwnerModel) {
@@ -154,6 +181,67 @@ export function Dashboard() {
     action(addedCount ? `${addedCount} propietarios de ejemplo añadidos` : "Los propietarios de ejemplo ya están cargados");
   }
 
+  async function handleExcelImport(file: File | undefined) {
+    if (!file) return;
+
+    try {
+      const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
+      const sheetName = workbook.SheetNames.find((name) => name.trim().toLocaleLowerCase("es-ES") === "propietarios");
+      if (!sheetName) throw new Error('No se encontró la pestaña "Propietarios".');
+
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(workbook.Sheets[sheetName], { defval: "" });
+      const requiredColumns = ["Portal / Bloque", "Planta", "Puerta", "Nombre del propietario"];
+      const headers = Object.keys(rows[0] || {});
+      const missingColumns = requiredColumns.filter((column) => !headers.includes(column));
+      if (missingColumns.length) throw new Error(`Faltan columnas obligatorias: ${missingColumns.join(", ")}.`);
+
+      const seenEmails = new Set<string>();
+      const owners = rows.map((row, index): OwnerModel => {
+        const portal = String(row["Portal / Bloque"] || "").trim();
+        const floor = String(row["Planta"] || "").trim();
+        const door = String(row["Puerta"] || "").trim();
+        const name = String(row["Nombre del propietario"] || "").trim();
+        const email = normalizeEmail(String(row.Email || ""));
+
+        if (!portal || !floor || !door || !name) throw new Error(`La fila ${index + 2} necesita portal, planta, puerta y propietario.`);
+        if (email && seenEmails.has(email)) throw new Error(`El correo ${email} está repetido (fila ${index + 2}).`);
+        if (email) seenEmails.add(email);
+
+        const rawCoefficient = row["Coeficiente de propiedad (%)"];
+        const numericCoefficient = typeof rawCoefficient === "number"
+          ? rawCoefficient <= 1 ? rawCoefficient * 100 : rawCoefficient
+          : Number(String(rawCoefficient || "").replace("%", "").replace(",", "."));
+        const coefficient = Number.isFinite(numericCoefficient) && numericCoefficient > 0
+          ? `${numericCoefficient.toLocaleString("es-ES", { maximumFractionDigits: 4 })}%`
+          : undefined;
+        const payment = String(row["Estado de pago"] || "").trim().toLocaleLowerCase("es-ES") === "pendiente" ? "Pendiente" : "Al día";
+        const initials = name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "PR";
+
+        return {
+          id: `owner-import-${Date.now()}-${index}`,
+          initials,
+          name,
+          home: `${portal} · ${floor} ${door}`,
+          email: email || `sin-correo-${Date.now()}-${index}@ejemplo.local`,
+          phone: String(row["Teléfono"] || "").trim() || undefined,
+          dni: String(row["DNI/NIF"] || "").trim() || undefined,
+          coefficient,
+          payment,
+        };
+      });
+
+      if (!owners.length) throw new Error("La pestaña Propietarios no contiene viviendas para importar.");
+      setImportedOwners(owners);
+      setImportedCommunityCounts({ portals: new Set(rows.map((row) => String(row["Portal / Bloque"] || "").trim())).size, units: owners.length });
+      setCommunityModalOwnerMode("import");
+      action(`${owners.length} viviendas preparadas desde ${file.name}`);
+    } catch (cause) {
+      setImportedOwners(null);
+      setImportedCommunityCounts(null);
+      action(cause instanceof Error ? cause.message : "No se pudo leer el archivo Excel.");
+    }
+  }
+
   function handleCreateCommunity(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -161,8 +249,8 @@ export function Dashboard() {
     if (!name) return;
 
     const location = String(form.get("location") || "Málaga").trim();
-    const portals = Math.max(1, Number(form.get("portals") || 2));
-    const totalUnits = Math.max(1, Number(form.get("totalUnits") || 32));
+    let portals = Math.max(1, Number(form.get("portals") || 2));
+    let totalUnits = Math.max(1, Number(form.get("totalUnits") || 32));
     const cif = String(form.get("cif") || `H-${Math.floor(10000000 + Math.random() * 90000000)}`);
     const ownerMode = String(form.get("ownerMode") || "sample");
 
@@ -173,7 +261,15 @@ export function Dashboard() {
 
     let initialOwners: OwnerModel[] = [];
 
-    if (ownerMode === "sample") {
+    if (ownerMode === "import") {
+      if (!importedOwners || !importedCommunityCounts) {
+        action("Selecciona un archivo Excel válido antes de crear la comunidad");
+        return;
+      }
+      initialOwners = importedOwners;
+      portals = importedCommunityCounts.portals;
+      totalUnits = importedCommunityCounts.units;
+    } else if (ownerMode === "sample") {
       // Create initial sample owners tailored to the portals
       initialOwners = sampleOwnersBank.map((s, idx) => ({
         id: `owner-init-${Date.now()}-${idx}`,
@@ -284,6 +380,8 @@ export function Dashboard() {
       // ignore
     }
     setShowAddCommunityModal(false);
+    setImportedOwners(null);
+    setImportedCommunityCounts(null);
     handleSelectCommunity(newComm.id);
     action(`Comunidad "${newComm.name}" creada con ${initialOwners.length} propietarios de ejemplo`);
   }
@@ -420,11 +518,20 @@ export function Dashboard() {
 
                   <input type="hidden" name="ownerMode" value={communityModalOwnerMode} />
 
+                  <label style={{ display: "block", marginBottom: "12px" }}>
+                    <span style={{ display: "block", marginBottom: "5px", fontSize: "0.82rem", fontWeight: 600 }}>Importar propietarios y viviendas desde Excel</span>
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={(event) => handleExcelImport(event.target.files?.[0])}
+                    />
+                  </label>
+
                   {communityModalOwnerMode === "sample" ? (
                     <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", margin: "4px 0 12px", background: "#f8fafc", padding: "10px 12px", borderRadius: "8px" }}>
                       💡 Se autogenerarán 5 propietarios realistas (con DNI, teléfonos, correos y coeficientes de participación) para que puedas probar la comunidad de inmediato.
                     </p>
-                  ) : (
+                  ) : communityModalOwnerMode === "manual" ? (
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", background: "#f8fafc", padding: "12px", borderRadius: "8px", marginBottom: "12px" }}>
                       <label style={{ gridColumn: "1 / -1" }}>
                         Nombre y apellidos
@@ -450,6 +557,12 @@ export function Dashboard() {
                         </select>
                       </label>
                     </div>
+                  ) : (
+                    <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", margin: "4px 0 12px", background: "#f8fafc", padding: "10px 12px", borderRadius: "8px" }}>
+                      {importedCommunityCounts
+                        ? `Archivo listo: ${importedCommunityCounts.units} viviendas de ${importedCommunityCounts.portals} portales. Los datos sustituirán los campos manuales.`
+                        : "Elige la plantilla Excel para cargar propietarios y viviendas."}
+                    </p>
                   )}
                 </div>
 
@@ -709,6 +822,7 @@ export function Dashboard() {
               onOpenAddModal={() => setShowAddCommunityModal(true)}
               onAddOwner={handleAddOwnerToCurrentCommunity}
               onAddSampleOwners={handleAddSampleOwnersToCurrentCommunity}
+              onRequestDeleteCommunity={requestCommunityDeletion}
               notify={action}
             />
           ) : (
@@ -1038,11 +1152,20 @@ export function Dashboard() {
 
               <input type="hidden" name="ownerMode" value={communityModalOwnerMode} />
 
+              <label style={{ display: "block", marginBottom: "12px" }}>
+                <span style={{ display: "block", marginBottom: "5px", fontSize: "0.82rem", fontWeight: 600 }}>Importar propietarios y viviendas desde Excel</span>
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={(event) => handleExcelImport(event.target.files?.[0])}
+                />
+              </label>
+
               {communityModalOwnerMode === "sample" ? (
                 <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", margin: "4px 0 12px", background: "#f8fafc", padding: "10px 12px", borderRadius: "8px" }}>
                   💡 Se autogenerarán 5 propietarios realistas (con DNI, teléfonos, correos y coeficientes de participación) para que puedas probar la comunidad de inmediato.
                 </p>
-              ) : (
+              ) : communityModalOwnerMode === "manual" ? (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", background: "#f8fafc", padding: "12px", borderRadius: "8px", marginBottom: "12px" }}>
                   <label style={{ gridColumn: "1 / -1" }}>
                     Nombre y apellidos
@@ -1068,6 +1191,12 @@ export function Dashboard() {
                     </select>
                   </label>
                 </div>
+              ) : (
+                <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", margin: "4px 0 12px", background: "#f8fafc", padding: "10px 12px", borderRadius: "8px" }}>
+                  {importedCommunityCounts
+                    ? `Archivo listo: ${importedCommunityCounts.units} viviendas de ${importedCommunityCounts.portals} portales. Los datos sustituirán los campos manuales.`
+                    : "Elige la plantilla Excel para cargar propietarios y viviendas."}
+                </p>
               )}
             </div>
 
@@ -1085,6 +1214,38 @@ export function Dashboard() {
           </form>
         </div>
       )}
+
+      {communityPendingDeletion && (
+        <div className="modal-backdrop" onMouseDown={() => setCommunityPendingDeletion(null)}>
+          <div className="modal" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="modal-head">
+              <div>
+                <small>{communityDeletionConfirmed ? "SEGUNDA CONFIRMACIÓN" : "PRIMERA CONFIRMACIÓN"}</small>
+                <h2>Dar de baja una comunidad</h2>
+              </div>
+              <button type="button" onClick={() => setCommunityPendingDeletion(null)} aria-label="Cerrar">×</button>
+            </div>
+            <p style={{ margin: "0 0 14px", color: "var(--text-muted)", lineHeight: 1.5 }}>
+              Vas a eliminar <strong>{communityPendingDeletion.name}</strong> de esta demo, incluidos sus propietarios y datos guardados en este navegador.
+            </p>
+            <p style={{ margin: "0 0 18px", color: "#b2594d", fontWeight: 700 }}>
+              {communityDeletionConfirmed ? "Confirma de nuevo para eliminarla definitivamente." : "Esta acción requiere una segunda confirmación."}
+            </p>
+            <div className="modal-actions">
+              <button type="button" onClick={() => setCommunityPendingDeletion(null)}>Cancelar</button>
+              {communityDeletionConfirmed ? (
+                <button type="button" className="primary" style={{ background: "#b2594d" }} onClick={confirmCommunityDeletion}>
+                  Sí, dar de baja definitivamente
+                </button>
+              ) : (
+                <button type="button" className="primary" style={{ background: "#b2594d" }} onClick={() => setCommunityDeletionConfirmed(true)}>
+                  Continuar con la baja
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1097,6 +1258,7 @@ function ModuleView({
   onOpenAddModal,
   onAddOwner,
   onAddSampleOwners,
+  onRequestDeleteCommunity,
   notify,
 }: {
   active: string;
@@ -1106,6 +1268,7 @@ function ModuleView({
   onOpenAddModal: () => void;
   onAddOwner: (owner: OwnerModel) => boolean;
   onAddSampleOwners: () => void;
+  onRequestDeleteCommunity: (id: string) => void;
   notify: (message: string) => void;
 }) {
   const [filter, setFilter] = useState("");
@@ -1302,6 +1465,16 @@ function ModuleView({
                       </button>
                     )}
                   </div>
+                  <button
+                    type="button"
+                    style={{ marginTop: "12px", color: "#b2594d", fontSize: "10px", fontWeight: 700 }}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onRequestDeleteCommunity(comm.id);
+                    }}
+                  >
+                    Dar de baja esta comunidad
+                  </button>
                 </div>
               </article>
             );

@@ -20,6 +20,7 @@ export function CommunitySelectorHub({
   onLogout,
 }: CommunitySelectorHubProps) {
   const [search, setSearch] = useState("");
+  const [showAllNotices, setShowAllNotices] = useState(false);
 
   const filtered = communities.filter(
     (c) =>
@@ -27,6 +28,7 @@ export function CommunitySelectorHub({
       c.location.toLowerCase().includes(search.toLowerCase()) ||
       c.cif.toLowerCase().includes(search.toLowerCase())
   );
+  const totalNotices = communities.reduce((total, community) => total + community.communications.length, 0);
 
   return (
     <div className="hub-page">
@@ -189,6 +191,69 @@ export function CommunitySelectorHub({
             </button>
           </div>
         )}
+
+        <section style={{ marginTop: "32px", paddingTop: "24px", borderTop: "1px solid #e5ece8" }}>
+          <button
+            type="button"
+            onClick={() => setShowAllNotices((isOpen) => !isOpen)}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "16px",
+              padding: "18px 20px",
+              border: "1px solid #d8e6df",
+              borderRadius: "12px",
+              background: "#f4faf7",
+              color: "#1c503b",
+              cursor: "pointer",
+              textAlign: "left",
+            }}
+            aria-expanded={showAllNotices}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <span style={{ display: "grid", placeItems: "center", width: "38px", height: "38px", borderRadius: "50%", background: "#257454", color: "#fff" }}>
+                <Icon name="bell" size={19} />
+              </span>
+              <span>
+                <strong style={{ display: "block" }}>Avisos y noticias de todas las comunidades</strong>
+                <small style={{ color: "#647c70" }}>Pulsa para verlos separados por comunidad</small>
+              </span>
+            </span>
+            <strong style={{ fontSize: "18px" }}>{totalNotices}</strong>
+          </button>
+
+          {showAllNotices && (
+            <div style={{ marginTop: "12px", display: "grid", gap: "12px" }}>
+              {communities.map((community) => (
+                <article key={community.id} className="data-panel" style={{ padding: "16px" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+                    <div>
+                      <strong>{community.name}</strong>
+                      <small style={{ display: "block", marginTop: "3px", color: "#72847a" }}>{community.location}</small>
+                    </div>
+                    <span className="status">{community.communications.length} avisos</span>
+                  </div>
+                  {community.communications.map((notice, index) => (
+                    <button
+                      type="button"
+                      key={`${notice.title}-${index}`}
+                      onClick={() => onSelectCommunity(community.id)}
+                      style={{ width: "100%", display: "flex", alignItems: "center", gap: "10px", padding: "9px 0", border: 0, borderTop: index ? "1px solid #edf0ee" : 0, background: "transparent", cursor: "pointer", textAlign: "left" }}
+                    >
+                      <em className={`type ${notice.tone}`}>{notice.type}</em>
+                      <span>
+                        <strong style={{ display: "block", fontSize: "12px" }}>{notice.title}</strong>
+                        <small style={{ color: "#72847a" }}>{notice.time}</small>
+                      </span>
+                    </button>
+                  ))}
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
       </main>
     </div>
   );

@@ -168,7 +168,7 @@ export function OwnersView({
       <div className="data-panel">
         <div className="data-head owners-head">
           <span>Propietario / Titular</span>
-          <span>Vivienda / Coef.</span>
+          <span>Vivienda</span>
           <span>Contacto</span>
           <span>Estado Cuota</span>
           <span>Acciones</span>
@@ -220,17 +220,13 @@ export function OwnersView({
                 <i>{o.initials}</i>
                 <div>
                   <strong>{o.name}</strong>
-                  <small>{o.dni ? `DNI: ${o.dni}` : "Censo oficial"}</small>
+                  <small>Propietario registrado</small>
                 </div>
               </span>
 
               <span>
                 <strong>{o.home}</strong>
-                {o.coefficient ? (
-                  <span className="coef-pill">Coef: {o.coefficient}</span>
-                ) : (
-                  <small>Portal comunitario</small>
-                )}
+                <small>Portal comunitario</small>
               </span>
 
               <span>
