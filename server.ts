@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import dotenv from 'dotenv';
+import { registerEmailTest } from './email-test';
 import { createServer as createViteServer } from 'vite';
 
 dotenv.config();
@@ -9,6 +10,7 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json({ limit: '10mb' }));
+registerEmailTest(app);
 
 // Helper to determine the app's base URL
 function getBaseUrl(req: express.Request): string {

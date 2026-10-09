@@ -29,3 +29,11 @@ Documentación:
 - `docs/ESPECIFICACION_FUNCIONAL.md`
 - `docs/DECISIONES_DOCUMENTOS_Y_JUNTAS.md`
 - `docs/ESTADO_Y_PROXIMOS_PASOS.md`
+
+## Correo de prueba local
+
+En Comunicaciones, el envío general es una simulación. Terrazas de Bel Air permite además una prueba real individual con Resend, limitada al destinatario configurado en el servidor.
+
+Configurar en `.env` local (excluido de GitHub): `EMAIL_TEST_ENABLED=true`, `EMAIL_TEST_RECIPIENT=tu-correo-de-resend` y `RESEND_API_KEY=tu-clave`. Reiniciar `npm run dev`. No usar variables `VITE_` para la clave ni publicarla. La prueba está desactivada en producción y solo acepta conexiones locales.
+
+Estado comprobado el 09/10/2026: correo aceptado por Resend y recepción confirmada por el usuario. Para cada envío, la aceptación del proveedor no implica por sí sola entrega al buzón.

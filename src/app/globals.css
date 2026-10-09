@@ -305,3 +305,104 @@ header { height:72px; display:flex; align-items:center; justify-content:space-be
 @media (max-width: 600px) {
   .hub-grid { grid-template-columns: 1fr; }
 }
+
+.owners-filter-buttons {
+  padding: 5px;
+  gap: 4px;
+  border: 1px solid #dde6e1;
+  border-radius: 13px;
+  background: #eaf0ed;
+  flex-wrap: wrap;
+}
+.owners-filter-buttons > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 40px;
+  padding: 8px 13px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font-size: 13px;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: box-shadow .15s, transform .15s;
+}
+.owners-filter-buttons > button[aria-pressed="true"] {
+  box-shadow: 0 2px 6px #163c2c18;
+}
+.owners-filter-buttons > button:hover { transform: translateY(-1px); }
+.owners-filter-buttons > button:focus-visible { outline: 3px solid #65a187; outline-offset: 2px; }
+.owners-filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 25px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 7px;
+  background: #edf2ef;
+  color: #52685b;
+  font-size: 12px;
+  font-weight: 800;
+}
+.owners-filter-buttons > button[aria-pressed="true"] .owners-filter-count { background: #257454; color: #fff; }
+#filter-pending-owners .owners-filter-count { background: #faeae7; color: #b04d41; }
+#filter-pending-owners[aria-pressed="true"] .owners-filter-count { background: #b04d41; color: #fff; }
+
+.payments-demo { margin-bottom: 28px; padding: 24px; border: 1px solid #d9e5df; border-radius: 16px; background: #fff; }
+.payments-demo-header h2 { margin: 8px 0; font-size: 21px; color: #1b4935; }
+.payments-demo-header p,.payments-demo-help { color: #697d70; font-size: 13px; line-height: 1.6; }
+.payments-demo-tag { font-size: 10px; font-weight: 800; letter-spacing: .07em; color: #84601c; background: #fff4d6; padding: 6px 9px; border-radius: 6px; }
+.payments-demo-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0 12px; }
+.payments-demo-actions button,.payments-import { display: inline-flex; align-items: center; min-height: 42px; padding: 10px 14px; border: 1px solid #c8dbcf; border-radius: 8px; background: #f5faf7; color: #245c46; font-size: 13px; font-weight: 700; cursor: pointer; }
+.payments-import { position: relative; background: #257454; color: white; }
+.payments-import input { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
+.payments-demo button:disabled { opacity: .5; cursor: default; }
+.payments-demo button:focus-visible,.payments-import:focus-within { outline: 3px solid #65a187; outline-offset: 2px; }
+.payments-demo-message { padding: 12px; background: #fff5df; color: #78591f; border-radius: 8px; font-size: 13px; }
+.payments-preview { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 16px; background: #eef7f2; border: 1px solid #b7d8c5; border-radius: 10px; margin: 16px 0; }
+.payments-preview > div { flex: 1; min-width: 200px; }
+.payments-preview p { font-size: 12px; margin-bottom: 0; }
+.payments-preview > button { min-height: 40px; padding: 10px 14px; border-radius: 7px; cursor: pointer; }
+.payments-summary { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; margin: 20px 0; }
+.payments-summary > div { padding: 18px 14px; border-radius: 10px; background: #f3f7f5; }
+.payments-summary span { display: block; font-size: 12px; color: #63796b; }
+.payments-summary strong { display: block; font-size: 24px; color: #245c46; margin-top: 8px; }
+.payments-summary .payments-overdue { background: #fff0ed; }
+.payments-summary .payments-overdue strong { color: #b04d41; }
+.payments-table-heading { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; justify-content: space-between; font-size: 12px; color: #697d70; }
+.payments-table-heading select { margin-left: 10px; padding: 8px; border: 1px solid #d9e5df; border-radius: 7px; max-width: 100%; }
+.payments-table-scroll { overflow-x: auto; margin-top: 12px; }
+.payments-demo table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+.payments-demo caption { text-align: left; color: #697d70; padding: 10px 0; }
+.payments-demo th { background: #f1f6f3; color: #537260; }
+.payments-demo th,.payments-demo td { padding: 12px; border-bottom: 1px solid #e7eee9; }
+.payments-demo td:nth-child(n+3) { white-space: nowrap; }
+.payments-demo td small { display: block; margin-top: 5px; color: #809087; }
+.payments-state { padding: 5px 7px; border-radius: 6px; background: #f0f3f1; white-space: nowrap; }
+.payments-empty { padding: 22px; border: 1px dashed #ccdcd2; border-radius: 10px; color: #63796b; font-size: 13px; }
+@media(max-width: 1000px) { .payments-summary { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media(max-width: 600px) { .payments-demo { padding: 16px; } .payments-summary { grid-template-columns: 1fr; } }
+
+.email-recipient-selection { border: 1px solid #dce7e0; border-radius: 12px; padding: 16px; }
+.email-recipient-selection legend { padding: 0 8px; color: #245c46; font-size: 13px; font-weight: 700; }
+.email-recipient-selection > p { font-size: 12px; color: #697d70; }
+.email-selection-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
+.email-selection-actions > button { min-height: 38px; padding: 8px 14px; border: 1px solid #ccddd2; border-radius: 8px; cursor: pointer; }
+.email-recipient-list { max-height: 240px; overflow: auto; }
+.email-composer .email-recipient-list > label { display: flex; align-items: center; gap: 12px; padding: 10px; border-bottom: 1px solid #edf2ef; cursor: pointer; }
+.email-composer .email-recipient-list input { width: 18px; height: 18px; margin: 0; flex-shrink: 0; accent-color: #257454; }
+.email-recipient-list strong,.email-recipient-list small { display: block; font-size: 12px; overflow-wrap: anywhere; }
+.email-recipient-list small { margin-top: 4px; color: #697d70; }
+.email-composer select { padding: 10px; border: 1px solid #dce7e0; border-radius: 8px; background: #fff; }
+.email-preview { padding: 20px; background: #f3f8f5; border: 1px solid #b9d6c5; border-radius: 12px; margin-top: 20px; font-size: 13px; }
+.email-message-body { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; }
+.email-local-message { background: #fff4d6; padding: 14px; color: #72551e; border-radius: 8px; font-size: 13px; }
+.email-history { margin-top: 24px; padding: 22px; border: 1px solid #dce7e0; border-radius: 12px; background: white; }
+.email-history h2 { font-size: 18px; color: #245c46; }
+.email-history p { font-size: 13px; color: #697d70; }
+.email-history article { border-top: 1px solid #e5ece8; padding: 14px 0; }
+.email-history article > button { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; width: 100%; background: none; border: 0; text-align: left; cursor: pointer; }
+.email-history article > button span { font-size: 12px; color: #697d70; }
+.email-composer button:disabled { opacity: .5; cursor: default; }

@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { Icon } from "./icon";
+import { PaymentsDemo } from "./payments-demo";
+import { EmailCommunications } from "./email-communications";
 import { initialCommunitiesList, CommunityModel, OwnerModel } from "../data/communitiesData";
 import { OwnersView, sampleOwnersBank } from "./owners-view";
 import { CommunitySelectorHub } from "./community-selector-hub";
@@ -139,6 +141,19 @@ export function Dashboard() {
     return true;
   }
 
+  function handleUpdateOwner(original: OwnerModel, updated: OwnerModel) {
+    const index = currentCommunity.owners.indexOf(original);
+    if (index < 0) { action("No se encontró el propietario en esta comunidad"); return false; }
+    if (currentCommunity.owners.some((owner, i) => i !== index && normalizeEmail(owner.email) === normalizeEmail(updated.email))) {
+      action("Ya existe un propietario con ese correo en esta comunidad"); return false;
+    }
+    const next = communities.map(comm => comm.id === currentCommunity.id
+      ? withOwnerStats(comm, comm.owners.map((owner, i) => i === index ? { ...updated, id: original.id } : owner)) : comm);
+    try { localStorage.setItem(communitiesStorageKey, JSON.stringify(next)); }
+    catch { action("No se pudieron guardar los cambios en el navegador"); return false; }
+    setCommunities(next);
+    return true;
+  }
   function handleAddSampleOwnersToCurrentCommunity() {
     const nextSampleOwners: OwnerModel[] = sampleOwnersBank.map((s, idx) => {
       const initials = s.name
@@ -792,6 +807,7 @@ export function Dashboard() {
             <ModuleView
               active={active}
               currentCommunity={currentCommunity}
+              onUpdateOwner={handleUpdateOwner}
               onAddOwner={handleAddOwnerToCurrentCommunity}
               onAddSampleOwners={handleAddSampleOwnersToCurrentCommunity}
               onRequestDeleteCommunity={requestCommunityDeletion}
@@ -1235,6 +1251,7 @@ function ModuleView({
   onOpenAddModal,
   active,
   currentCommunity,
+  onUpdateOwner,
   onAddOwner,
   onAddSampleOwners,
   onRequestDeleteCommunity,
@@ -1243,6 +1260,7 @@ function ModuleView({
 }: {
   active: string;
   currentCommunity: CommunityModel;
+  onUpdateOwner: (original: OwnerModel, updated: OwnerModel) => boolean;
   onAddOwner: (owner: OwnerModel) => boolean;
   onAddSampleOwners: () => void;
   onRequestDeleteCommunity: (id: string) => void;
@@ -1290,15 +1308,6 @@ function ModuleView({
     notify("Aviso registrado correctamente");
   }
 
-  function sendEmailCommunication(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const subject = String(form.get("subject") || "Comunicado de la comunidad").trim();
-    const recipients = currentCommunity.owners.filter((owner) => owner.email.trim()).length;
-    notify(`Comunicado “${subject}” preparado para ${recipients} propietarios`);
-    event.currentTarget.reset();
-  }
-
   const title = active === "Comunidades" ? currentCommunity.name : active === "Listado de comunidades" ? "Comunidades" : active;
   const subtitles: Record<string, string> = {
     "Listado de comunidades": "Selecciona una comunidad para abrir su panel de gestión",
@@ -1338,14 +1347,14 @@ function ModuleView({
           <h1>{title}</h1>
           <span>{subtitles[active] || "Módulo en preparación"}</span>
         </div>
-        {!["Comunidades", "Listado de comunidades", "Pendientes de pago", "Propietarios", "Comunicaciones"].includes(active) && (
+        {!["Economía", "Comunidades", "Listado de comunidades", "Pendientes de pago", "Propietarios", "Comunicaciones"].includes(active) && (
           <button className="primary" onClick={() => setShowForm(true)}>
             <Icon name="plus" size={18} /> Nuevo
           </button>
         )}
       </div>
 
-      {!["Comunidades", "Listado de comunidades", "Pendientes de pago", "Propietarios", "Comunicaciones"].includes(active) && (
+      {!["Economía", "Comunidades", "Listado de comunidades", "Pendientes de pago", "Propietarios", "Comunicaciones"].includes(active) && (
         <div className="module-toolbar">
           <label className="module-search">
             <Icon name="search" size={17} />
@@ -1500,44 +1509,14 @@ function ModuleView({
         <OwnersView
           initialStatusFilter={active === "Pendientes de pago" ? "Pendiente" : "todos"}
           currentCommunity={currentCommunity}
+          onUpdateOwner={onUpdateOwner}
           onAddOwner={onAddOwner}
           onAddExampleOwners={onAddSampleOwners}
           notify={notify}
         />
       )}
 
-      {active === "Comunicaciones" && (
-        <form className="email-composer" onSubmit={sendEmailCommunication}>
-          <div className="email-composer-head">
-            <span className="stat-icon blue"><Icon name="message" size={22} /></span>
-            <div>
-              <h2>Enviar comunicado por correo</h2>
-              <p>Los correos se enviarán a los propietarios registrados en esta comunidad.</p>
-            </div>
-          </div>
-
-          <div className="email-recipients">
-            <span>PARA</span>
-            <strong>Todos los propietarios con correo electrónico</strong>
-            <b>{currentCommunity.owners.filter((owner) => owner.email.trim()).length} destinatarios</b>
-          </div>
-
-          <label>
-            Asunto
-            <input name="subject" required placeholder="Ej. Fumigación programada para el 6 de octubre" />
-          </label>
-          <label>
-            Mensaje
-            <textarea name="message" rows={7} required placeholder="Indica a los propietarios la información que necesitan conocer…" />
-          </label>
-          <div className="email-composer-footer">
-            <small>Modo demostración: el envío se simula y no se entrega ningún correo real.</small>
-            <button className="primary" type="submit">
-              <Icon name="message" size={16} /> Enviar comunicado
-            </button>
-          </div>
-        </form>
-      )}
+      {active === "Comunicaciones" && <EmailCommunications community={currentCommunity} />}
 
       {/* Avisos de la comunidad activa */}
       {active === "Avisos y noticias" && (
@@ -1607,8 +1586,10 @@ function ModuleView({
         </div>
       )}
 
+      {active === "Economía" && <PaymentsDemo community={currentCommunity} />}
+
       {/* Módulos restantes */}
-      {!["Comunidades", "Listado de comunidades", "Pendientes de pago", "Propietarios", "Comunicaciones", "Avisos y noticias", "Documentos"].includes(
+      {!["Economía", "Comunidades", "Listado de comunidades", "Pendientes de pago", "Propietarios", "Comunicaciones", "Avisos y noticias", "Documentos"].includes(
         active
       ) && (
         <div className="empty-module">

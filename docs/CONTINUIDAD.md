@@ -69,3 +69,33 @@ Producto web comercial para administradores de fincas: gestionar varias comunida
 - Ajuste solicitado: cuatro columnas desde 851 px de ventana; tres hasta 850 px y dos hasta 700 px (una hasta 600 px).
 
 - La pantalla inicial (CommunitySelectorHub) también muestra cuatro tarjetas por fila desde 851 px, incluida Registrar nueva comunidad, con tarjetas compactas y contenedor máximo de 1440 px.
+
+- Propietarios sustituye Añadir lote de ejemplo por Modificar propietario: selector limitado a la comunidad activa, edición de datos y estado de cuota, validación de correo duplicado y guardado local con recálculo de contadores.
+
+- Los filtros Todos / Al día / Pendientes tienen formato de pestañas con contadores separados, selección accesible y énfasis rojo para pendientes.
+
+## Prototipo de cuotas — 09/10/2026
+
+- Se incorpora `PaymentsDemo` dentro de Propietarios, separado de la etiqueta manual Al día/Pendiente del censo. No actualiza esos estados ni representa conciliación bancaria.
+- Permite cargar un ejemplo ficticio por vivienda (septiembre y noviembre de 2026), descargarlo como Excel e importar una hoja `Cuotas` con Referencia, Vivienda, Concepto, Vencimiento (texto AAAA-MM-DD), Cuota y Cobrado (total acumulado por cuota, euros).
+- La vista previa exige confirmación y sustituye el resumen completo de esa comunidad, evitando sumar otra vez un archivo repetido. Se validan referencias únicas, viviendas del censo, fechas e importes (hasta dos decimales; sin negativos ni cobros superiores a cuota). El dinero se calcula en céntimos.
+- Resumen: emitido, cobrado, vencido pendiente y pendiente por vencer. Detalle filtrable por vivienda con pagado, parcial, vencido o por vencer. Una cuota vence al terminar su fecha de vencimiento; se usa la fecha de Madrid.
+- Persistencia independiente por comunidad en localStorage (`fincaflow-quota-demo-v1-<id>`), solo en este navegador. La importación se cancela si se cambia de comunidad mientras se lee el archivo.
+- Comprobado en localhost: cargar ejemplo, vista previa y confirmar (5 viviendas: 1.000 € emitidos, 320 € cobrados, 180 € vencidos, 500 € futuros a 09/10/2026). Pruebas de importes, fechas inválidas, duplicados, viviendas desconocidas y ciclo Excel en memoria. Lint/build correctos; persiste aviso conocido de tamaño de bundle.
+- Pendiente para producción: identificadores estables de viviendas, historial de titularidad, saldos iniciales, movimientos y devoluciones, auditoría y almacenamiento compartido. El prototipo muestra saldos acumulados, no un historial de transferencias individuales ni una prueba de estar al día de toda la contabilidad.
+
+- El prototipo de cuotas se traslada a Economía por petición del usuario. Propietarios vuelve a mostrar únicamente el censo; Economía concentra el resumen, ejemplo ficticio e importación Excel con columna Cobrado. Se conservan los datos locales ya cargados.
+
+- La descarga de Economía usa el censo actual de la comunidad y el resumen confirmado (o ejemplo ficticio si no existe). Añade Comunidad y Propietario, hoja Información con origen y límites, y nombre de archivo por comunidad y fecha. No implica censo completo ni cobros bancarios verificados.
+
+- El ejemplo económico usa 240 € por vivienda y trimestre, cuatro cuotas anuales (960 €). Vencimientos ficticios el día 5 de enero/abril/julio/octubre; cuarto trimestre con cobros completos, parciales de 120 € y pendientes. Se actualiza automáticamente solo el antiguo ejemplo generado de septiembre/noviembre; los archivos importados se conservan.
+
+- Comunicaciones incorpora selección de destinatarios de la comunidad activa, deduplicación y validación de correos (excluye .local), plantillas, vista previa y confirmación explícita de simulación. Historial de simulaciones de asunto, cuerpo, destinatarios y fecha guardado por comunidad en localStorage. El envío general no entrega correos; la prueba individual real se describe abajo.
+
+## Prueba real individual por correo — 09/10/2026
+
+- Se autoriza una excepción para enviar pruebas únicamente al correo del usuario, configurado en EMAIL_TEST_RECIPIENT dentro de .env local (ignorado por Git). No se altera ningún titular existente ni se publica su dirección en el código.
+- Integración Resend mediante API en servidor; clave RESEND_API_KEY configurada por el usuario exclusivamente en .env local. EMAIL_TEST_ENABLED activa la prueba solo fuera de producción. Remitente onboarding@resend.dev, destinatario fijado en servidor y comunidad bel-air; el navegador no puede cambiar destinatarios.
+- La ruta requiere conexión loopback, hostname local, origen local y cabecera explícita; límite de un intento por minuto e idempotencia. UI con revisión independiente y botón Enviar prueba real. El envío general continúa simulado.
+- Estado: CORREO ACEPTADO por Resend y recepción confirmada expresamente por el usuario el 09/10/2026. Prueba con asunto [PRUEBA FincaFlow] Comprobación de correo de Terrazas de Bel Air, para portal 4, puerta 2. Identificador del proveedor: 01a121e4-a90c-7340-a270-366863680c47. El servidor local se reinició con la configuración. La aplicación distingue aceptación del proveedor de entrega; la confirmación de recepción de esta prueba procede del usuario.
+- Para configurar otro PC: crear cuenta Resend con el correo autorizado, generar clave de envío, pegarla únicamente en .env y reiniciar npm run dev. No compartir la clave por chat ni añadirla a GitHub.

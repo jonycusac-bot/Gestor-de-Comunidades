@@ -7,6 +7,7 @@ import { OwnerModel, CommunityModel } from "../data/communitiesData";
 interface OwnersManagerProps {
   initialStatusFilter?: "todos" | "Al día" | "Pendiente";
   currentCommunity: CommunityModel;
+  onUpdateOwner: (original: OwnerModel, updated: OwnerModel) => boolean;
   onAddOwner: (newOwner: OwnerModel) => boolean;
   onAddExampleOwners: () => void;
   notify: (msg: string) => void;
@@ -63,10 +64,13 @@ export const sampleOwnersBank = [
 export function OwnersView({
   initialStatusFilter = "todos",
   currentCommunity,
+  onUpdateOwner,
   onAddOwner,
   onAddExampleOwners,
   notify,
 }: OwnersManagerProps) {
+  const [editingOwner, setEditingOwner] = useState<OwnerModel | null>(null);
+  const [ownerIndex, setOwnerIndex] = useState(0);
   const [filter, setFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | "Al día" | "Pendiente">(initialStatusFilter);
   const [showModal, setShowModal] = useState(false);
@@ -107,9 +111,10 @@ export function OwnersView({
           />
         </label>
 
-        <div className="owners-filter-buttons">
+        <div className="owners-filter-buttons" role="group" aria-label="Filtrar propietarios por estado de cuota">
           <button
             id="filter-all-owners"
+            aria-pressed={statusFilter === "todos"}
             style={{
               backgroundColor: statusFilter === "todos" ? "#edf7f2" : "#fff",
               borderColor: statusFilter === "todos" ? "#257454" : "var(--line)",
@@ -118,10 +123,11 @@ export function OwnersView({
             }}
             onClick={() => setStatusFilter("todos")}
           >
-            Todos ({currentCommunity.owners.length})
+            Todos <span className="owners-filter-count">{currentCommunity.owners.length}</span>
           </button>
           <button
             id="filter-paid-owners"
+            aria-pressed={statusFilter === "Al día"}
             style={{
               backgroundColor: statusFilter === "Al día" ? "#edf7f2" : "#fff",
               borderColor: statusFilter === "Al día" ? "#257454" : "var(--line)",
@@ -130,10 +136,11 @@ export function OwnersView({
             }}
             onClick={() => setStatusFilter("Al día")}
           >
-            Al día ({upToDateCount})
+            Al día <span className="owners-filter-count">{upToDateCount}</span>
           </button>
           <button
             id="filter-pending-owners"
+            aria-pressed={statusFilter === "Pendiente"}
             style={{
               backgroundColor: statusFilter === "Pendiente" ? "#faeae7" : "#fff",
               borderColor: statusFilter === "Pendiente" ? "#b75b4f" : "var(--line)",
@@ -142,22 +149,15 @@ export function OwnersView({
             }}
             onClick={() => setStatusFilter("Pendiente")}
           >
-            Pendientes ({pendingCount})
+            Pendientes <span className="owners-filter-count">{pendingCount}</span>
           </button>
         </div>
 
         <div className="owners-action-buttons">
-          <button
-            id="btn-add-sample-owners"
-            className="owner-action-btn"
-            onClick={() => {
-              onAddExampleOwners();
-            }}
-            title="Añadir lote de propietarios de ejemplo"
-          >
-            <Icon name="users" size={14} /> Añadir lote de ejemplo
-          </button>
-          <button
+          <button id="btn-edit-owner" className="owner-action-btn" disabled={!currentCommunity.owners.length}
+            onClick={() => { setOwnerIndex(0); setEditingOwner({ ...currentCommunity.owners[0] }); }}>
+            <Icon name="users" size={14} /> Modificar propietario
+          </button>          <button
             id="btn-create-owner"
             className="primary"
             style={{ height: "39px" }}
@@ -192,7 +192,7 @@ export function OwnersView({
               No se encontraron propietarios con los filtros actuales
             </p>
             <p style={{ margin: "6px 0 16px", fontSize: "12px", color: "#8d9d95" }}>
-              Puedes registrar un nuevo propietario o generar datos de ejemplo rápidamente.
+              Puedes registrar un nuevo propietario o cambiar los filtros.
             </p>
             <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
               <button
@@ -201,16 +201,7 @@ export function OwnersView({
               >
                 <Icon name="plus" size={16} /> Crear propietario
               </button>
-              <button
-                className="owner-action-btn"
-                style={{ padding: "8px 14px", fontSize: "12px" }}
-                onClick={() => {
-                  onAddExampleOwners();
-                  notify(`Generados propietarios de ejemplo para ${currentCommunity.name}`);
-                }}
-              >
-                Cargar propietarios de ejemplo
-              </button>
+
             </div>
           </div>
         ) : (
@@ -263,6 +254,35 @@ export function OwnersView({
         )}
       </div>
 
+      {editingOwner && (
+        <div className="modal-backdrop" onMouseDown={() => setEditingOwner(null)}>
+          <form className="modal community-create-modal" onMouseDown={e => e.stopPropagation()} onSubmit={e => {
+            e.preventDefault();
+            const updated = { ...editingOwner, name: editingOwner.name.trim(), home: editingOwner.home.trim(), email: editingOwner.email.trim(),
+              initials: editingOwner.name.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join("").toUpperCase() };
+            if (!updated.name || !updated.home || !updated.email) return;
+            if (onUpdateOwner(currentCommunity.owners[ownerIndex], updated)) {
+              setEditingOwner(null); setSelectedOwner(null); notify(`Propietario actualizado en ${currentCommunity.name}`);
+            }
+          }}>
+            <div className="modal-head"><div><small>{currentCommunity.name}</small><h2>Modificar propietario</h2></div>
+              <button type="button" aria-label="Cerrar" onClick={() => setEditingOwner(null)}>×</button></div>
+            <label>Selecciona el propietario
+              <select value={ownerIndex} onChange={e => { const index = Number(e.target.value); setOwnerIndex(index); setEditingOwner({ ...currentCommunity.owners[index] }); }}>
+                {currentCommunity.owners.map((owner, index) => <option value={index} key={index}>{owner.name} · {owner.home}</option>)}
+              </select>
+            </label>
+            <label>Nombre y apellidos<input required value={editingOwner.name} onChange={e => setEditingOwner({ ...editingOwner, name: e.target.value })} /></label>
+            <label>Vivienda<input required value={editingOwner.home} onChange={e => setEditingOwner({ ...editingOwner, home: e.target.value })} /></label>
+            <label>Email<input required type="email" value={editingOwner.email} onChange={e => setEditingOwner({ ...editingOwner, email: e.target.value })} /></label>
+            <label>Teléfono<input value={editingOwner.phone || ""} onChange={e => setEditingOwner({ ...editingOwner, phone: e.target.value })} /></label>
+            <label>DNI/NIF<input value={editingOwner.dni || ""} onChange={e => setEditingOwner({ ...editingOwner, dni: e.target.value })} /></label>
+            <label>Coeficiente de participación<input value={editingOwner.coefficient || ""} onChange={e => setEditingOwner({ ...editingOwner, coefficient: e.target.value })} /></label>
+            <label>Estado de cuota<select value={editingOwner.payment} onChange={e => setEditingOwner({ ...editingOwner, payment: e.target.value as OwnerModel["payment"] })}><option>Al día</option><option>Pendiente</option></select></label>
+            <div className="modal-actions"><button type="button" onClick={() => setEditingOwner(null)}>Cancelar</button><button className="primary" type="submit">Guardar cambios</button></div>
+          </form>
+        </div>
+      )}
       {/* Modal para crear un propietario manual o con plantillas rápidas */}
       {showModal && (
         <CreateOwnerModal
