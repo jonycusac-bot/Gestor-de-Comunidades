@@ -411,7 +411,7 @@ export function Dashboard() {
             className="modal-backdrop"
             onClick={() => setShowAddCommunityModal(false)}
           >
-            <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal community-create-modal" onClick={(e) => e.stopPropagation()}>
               <div className="modal-head">
                 <div>
                   <small>NUEVA COMUNIDAD</small>
@@ -472,10 +472,22 @@ export function Dashboard() {
                   <input name="cif" placeholder="Ej. H-12345678" />
                 </label>
 
-                {/* Configuración de propietarios iniciales */}
+                <section className="community-excel-import" aria-label="Importar nueva comunidad desde Excel">
+  <span className="community-excel-badge">ALTA DESDE EXCEL</span>
+  <h3>Importar nueva comunidad desde Excel</h3>
+  <p>Carga tu plantilla con propietarios y viviendas. Calcularemos automáticamente el número de portales y viviendas.</p>
+  <label className="community-excel-button">
+    Seleccionar archivo Excel
+    <input type="file" accept=".xlsx,.xls" onChange={(event) => handleExcelImport(event.target.files?.[0])} />
+  </label>
+  <small>{importedCommunityCounts && communityModalOwnerMode === "import"
+    ? `✓ Archivo listo: ${importedCommunityCounts.units} viviendas · ${importedCommunityCounts.portals} portales`
+    : 'Archivos .xlsx o .xls · Hoja «Propietarios»'}</small>
+</section>
+{/* Configuración de propietarios iniciales */}
                 <div style={{ marginTop: "12px", borderTop: "1px solid var(--border)", paddingTop: "12px" }}>
                   <small style={{ fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: "8px" }}>
-                    PROPIETARIOS INICIALES
+                    OTRAS OPCIONES · ALTA MANUAL O DE EJEMPLO
                   </small>
                   <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
                     <button
@@ -517,15 +529,6 @@ export function Dashboard() {
                   </div>
 
                   <input type="hidden" name="ownerMode" value={communityModalOwnerMode} />
-
-                  <label style={{ display: "block", marginBottom: "12px" }}>
-                    <span style={{ display: "block", marginBottom: "5px", fontSize: "0.82rem", fontWeight: 600 }}>Importar propietarios y viviendas desde Excel</span>
-                    <input
-                      type="file"
-                      accept=".xlsx,.xls"
-                      onChange={(event) => handleExcelImport(event.target.files?.[0])}
-                    />
-                  </label>
 
                   {communityModalOwnerMode === "sample" ? (
                     <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", margin: "4px 0 12px", background: "#f8fafc", padding: "10px 12px", borderRadius: "8px" }}>
@@ -609,34 +612,6 @@ export function Dashboard() {
           </span>
         </div>
 
-        {/* Botón de acceso directo para cambiar de comunidad */}
-        <div style={{ padding: "0 14px 12px" }}>
-          <button
-            type="button"
-            className="switch-community-btn"
-            style={{
-              width: "100%",
-              justifyContent: "space-between",
-              padding: "8px 10px",
-              background: "#163c2c",
-              border: "1px solid rgba(255,255,255,0.12)",
-              color: "#e6f2eb",
-              borderRadius: "8px",
-              fontSize: "11px",
-              fontWeight: 600,
-              margin: 0,
-            }}
-            onClick={handleReturnToHub}
-            title="Ver todas las comunidades"
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <Icon name="building" size={14} />
-              <span>Cambiar comunidad</span>
-            </span>
-            <span style={{ fontSize: "10px", opacity: 0.7 }}>◀ Salir</span>
-          </button>
-        </div>
-
         <div className="workspace-label">
           {currentCommunity.name.toUpperCase()}
         </div>
@@ -644,9 +619,9 @@ export function Dashboard() {
           {nav.map(([icon, label]) => (
             <button
               id={`nav-${label.toLowerCase().replace(/\s+/g, "-")}`}
-              className={active === label ? "active" : ""}
+              className={active === label || (label === "Comunidades" && active === "Listado de comunidades") ? "active" : ""}
               onClick={() => {
-                setActive(label);
+                setActive(label === "Comunidades" ? "Listado de comunidades" : label);
                 setSidebar(false);
               }}
               key={label}
@@ -763,7 +738,7 @@ export function Dashboard() {
                       id="dropdown-view-all-communities"
                       onClick={() => {
                         setDropdownOpen(false);
-                        setActive("Comunidades");
+                        handleReturnToHub();
                       }}
                     >
                       <Icon name="building" size={13} />
@@ -817,12 +792,13 @@ export function Dashboard() {
             <ModuleView
               active={active}
               currentCommunity={currentCommunity}
-              communities={communities}
-              onSelectCommunity={handleSelectCommunity}
-              onOpenAddModal={() => setShowAddCommunityModal(true)}
               onAddOwner={handleAddOwnerToCurrentCommunity}
               onAddSampleOwners={handleAddSampleOwnersToCurrentCommunity}
               onRequestDeleteCommunity={requestCommunityDeletion}
+              communities={communities}
+              onSelectCommunity={handleSelectCommunity}
+              onOpenAddModal={() => setShowAddCommunityModal(true)}
+              onNavigate={setActive}
               notify={action}
             />
           ) : (
@@ -1044,7 +1020,7 @@ export function Dashboard() {
           onMouseDown={() => setShowAddCommunityModal(false)}
         >
           <form
-            className="modal"
+            className="modal community-create-modal"
             onSubmit={handleCreateCommunity}
             onMouseDown={(e) => e.stopPropagation()}
           >
@@ -1106,10 +1082,22 @@ export function Dashboard() {
               <input name="cif" placeholder="Ej. H-12345678" />
             </label>
 
-            {/* Configuración de propietarios iniciales */}
+            <section className="community-excel-import" aria-label="Importar nueva comunidad desde Excel">
+  <span className="community-excel-badge">ALTA DESDE EXCEL</span>
+  <h3>Importar nueva comunidad desde Excel</h3>
+  <p>Carga tu plantilla con propietarios y viviendas. Calcularemos automáticamente el número de portales y viviendas.</p>
+  <label className="community-excel-button">
+    Seleccionar archivo Excel
+    <input type="file" accept=".xlsx,.xls" onChange={(event) => handleExcelImport(event.target.files?.[0])} />
+  </label>
+  <small>{importedCommunityCounts && communityModalOwnerMode === "import"
+    ? `✓ Archivo listo: ${importedCommunityCounts.units} viviendas · ${importedCommunityCounts.portals} portales`
+    : 'Archivos .xlsx o .xls · Hoja «Propietarios»'}</small>
+</section>
+{/* Configuración de propietarios iniciales */}
             <div style={{ marginTop: "12px", borderTop: "1px solid var(--border)", paddingTop: "12px" }}>
               <small style={{ fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: "8px" }}>
-                PROPIETARIOS INICIALES
+                OTRAS OPCIONES · ALTA MANUAL O DE EJEMPLO
               </small>
               <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
                 <button
@@ -1151,15 +1139,6 @@ export function Dashboard() {
               </div>
 
               <input type="hidden" name="ownerMode" value={communityModalOwnerMode} />
-
-              <label style={{ display: "block", marginBottom: "12px" }}>
-                <span style={{ display: "block", marginBottom: "5px", fontSize: "0.82rem", fontWeight: 600 }}>Importar propietarios y viviendas desde Excel</span>
-                <input
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={(event) => handleExcelImport(event.target.files?.[0])}
-                />
-              </label>
 
               {communityModalOwnerMode === "sample" ? (
                 <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", margin: "4px 0 12px", background: "#f8fafc", padding: "10px 12px", borderRadius: "8px" }}>
@@ -1251,24 +1230,26 @@ export function Dashboard() {
 }
 
 function ModuleView({
-  active,
-  currentCommunity,
   communities,
   onSelectCommunity,
   onOpenAddModal,
+  active,
+  currentCommunity,
   onAddOwner,
   onAddSampleOwners,
   onRequestDeleteCommunity,
   notify,
+  onNavigate,
 }: {
   active: string;
   currentCommunity: CommunityModel;
-  communities: CommunityModel[];
-  onSelectCommunity: (id: string) => void;
-  onOpenAddModal: () => void;
   onAddOwner: (owner: OwnerModel) => boolean;
   onAddSampleOwners: () => void;
   onRequestDeleteCommunity: (id: string) => void;
+  communities: CommunityModel[];
+  onSelectCommunity: (id: string) => void;
+  onOpenAddModal: () => void;
+  onNavigate: (module: string) => void;
   notify: (message: string) => void;
 }) {
   const [filter, setFilter] = useState("");
@@ -1318,9 +1299,11 @@ function ModuleView({
     event.currentTarget.reset();
   }
 
-  const title = active === "Avisos y noticias" ? "Avisos y noticias" : active;
+  const title = active === "Comunidades" ? currentCommunity.name : active === "Listado de comunidades" ? "Comunidades" : active;
   const subtitles: Record<string, string> = {
-    Comunidades: "Gestiona las comunidades asignadas y su configuración",
+    "Listado de comunidades": "Selecciona una comunidad para abrir su panel de gestión",
+    Comunidades: "Panel de gestión de esta comunidad",
+    "Pendientes de pago": `Cuotas pendientes de ${currentCommunity.name}`,
     Propietarios: `Propietarios, viviendas y pagos de ${currentCommunity.name}`,
     Comunicaciones: `Envía comunicados por correo a los propietarios de ${currentCommunity.name}`,
     Documentos: `Biblioteca documental de ${currentCommunity.name}`,
@@ -1355,14 +1338,14 @@ function ModuleView({
           <h1>{title}</h1>
           <span>{subtitles[active] || "Módulo en preparación"}</span>
         </div>
-        {active !== "Propietarios" && active !== "Comunicaciones" && (
+        {!["Comunidades", "Listado de comunidades", "Pendientes de pago", "Propietarios", "Comunicaciones"].includes(active) && (
           <button className="primary" onClick={() => setShowForm(true)}>
             <Icon name="plus" size={18} /> Nuevo
           </button>
         )}
       </div>
 
-      {active !== "Propietarios" && active !== "Comunicaciones" && (
+      {!["Comunidades", "Listado de comunidades", "Pendientes de pago", "Propietarios", "Comunicaciones"].includes(active) && (
         <div className="module-toolbar">
           <label className="module-search">
             <Icon name="search" size={17} />
@@ -1377,8 +1360,30 @@ function ModuleView({
         </div>
       )}
 
-      {/* Vista de Comunidades: Muestra Terrazas de Bel Air, Jardines del Sol y cualquier otra */}
       {active === "Comunidades" && (
+        <>
+          <div className="community-workspace-cards">
+            <button onClick={() => onNavigate("Propietarios")}>
+              <Icon name="users" size={28} /><strong>{currentCommunity.owners.length}</strong>
+              <h2>Propietarios</h2><p>Consulta viviendas y fichas de propietarios</p><span>Ver propietarios →</span>
+            </button>
+            <button onClick={() => onNavigate("Avisos y noticias")}>
+              <Icon name="bell" size={28} /><strong>{currentCommunity.communications.length}</strong>
+              <h2>Avisos y noticias</h2><p>Consulta las novedades de esta comunidad</p><span>Ver avisos →</span>
+            </button>
+            <button onClick={() => onNavigate("Pendientes de pago")}>
+              <Icon name="wallet" size={28} /><strong>{currentCommunity.owners.filter(owner => owner.payment === "Pendiente").length}</strong>
+              <h2>Pendientes de pago</h2><p>Revisa los propietarios con cuotas pendientes</p><span>Ver pendientes →</span>
+            </button>
+          </div>
+          <div className="community-workspace-details">
+            <span>{currentCommunity.location} · CIF: {currentCommunity.cif} · {currentCommunity.portals} portales · {currentCommunity.totalUnits} viviendas</span>
+            <button onClick={() => onRequestDeleteCommunity(currentCommunity.id)}>Dar de baja esta comunidad</button>
+          </div>
+        </>
+      )}
+      {/* Vista de Comunidades: Muestra Terrazas de Bel Air, Jardines del Sol y cualquier otra */}
+      {active === "Listado de comunidades" && (
         <div className="community-cards">
           {communities.map((comm) => {
             const isSelected = comm.id === currentCommunity.id;
@@ -1447,10 +1452,10 @@ function ModuleView({
                         style={{ color: "#257454", fontWeight: 800 }}
                         onClick={(event) => {
                           event.stopPropagation();
-                          notify(`Ya estás gestionando ${comm.name}`);
+                          onSelectCommunity(comm.id);
                         }}
                       >
-                        Gestionando actualmente <Icon name="check" size={15} />
+                        Abrir panel de comunidad <Icon name="arrow" size={15} />
                       </button>
                     ) : (
                       <button
@@ -1491,8 +1496,9 @@ function ModuleView({
       )}
 
       {/* Propietarios de la comunidad activa */}
-      {active === "Propietarios" && (
+      {(active === "Propietarios" || active === "Pendientes de pago") && (
         <OwnersView
+          initialStatusFilter={active === "Pendientes de pago" ? "Pendiente" : "todos"}
           currentCommunity={currentCommunity}
           onAddOwner={onAddOwner}
           onAddExampleOwners={onAddSampleOwners}
@@ -1602,7 +1608,7 @@ function ModuleView({
       )}
 
       {/* Módulos restantes */}
-      {!["Comunidades", "Propietarios", "Comunicaciones", "Avisos y noticias", "Documentos"].includes(
+      {!["Comunidades", "Listado de comunidades", "Pendientes de pago", "Propietarios", "Comunicaciones", "Avisos y noticias", "Documentos"].includes(
         active
       ) && (
         <div className="empty-module">

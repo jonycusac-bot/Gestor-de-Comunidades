@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Icon } from "./icon";
 import { OwnerModel, CommunityModel } from "../data/communitiesData";
 
 interface OwnersManagerProps {
+  initialStatusFilter?: "todos" | "Al día" | "Pendiente";
   currentCommunity: CommunityModel;
   onAddOwner: (newOwner: OwnerModel) => boolean;
   onAddExampleOwners: () => void;
@@ -60,15 +61,18 @@ export const sampleOwnersBank = [
 ];
 
 export function OwnersView({
+  initialStatusFilter = "todos",
   currentCommunity,
   onAddOwner,
   onAddExampleOwners,
   notify,
 }: OwnersManagerProps) {
   const [filter, setFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"todos" | "Al día" | "Pendiente">("todos");
+  const [statusFilter, setStatusFilter] = useState<"todos" | "Al día" | "Pendiente">(initialStatusFilter);
   const [showModal, setShowModal] = useState(false);
   const [selectedOwner, setSelectedOwner] = useState<OwnerModel | null>(null);
+
+  useEffect(() => { setStatusFilter(initialStatusFilter); setFilter(""); }, [initialStatusFilter, currentCommunity.id]);
 
   const filteredOwners = currentCommunity.owners.filter((o) => {
     const matchesQuery =

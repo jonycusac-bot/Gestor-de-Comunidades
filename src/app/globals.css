@@ -141,3 +141,167 @@ header { height:72px; display:flex; align-items:center; justify-content:space-be
   .hub-container { padding: 20px 16px 40px; }
   .hub-actions-bar { flex-direction: column; align-items: stretch; }
 }
+
+.community-excel-import {
+  margin-top: 18px;
+  padding: 20px;
+  border: 2px solid #15803d;
+  border-radius: 14px;
+  background: #f0fdf4;
+}
+.community-excel-badge {
+  display: inline-block;
+  color: #166534;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.community-excel-import h3 {
+  margin: 8px 0;
+  color: #14532d;
+  font-size: 1.2rem;
+  line-height: 1.3;
+}
+.community-excel-import p {
+  margin: 0 0 16px;
+  color: #365345;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+.community-excel-import .community-excel-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 10px 16px;
+  border-radius: 9px;
+  background: #15803d;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+}
+.community-excel-button:hover { background: #166534; }
+.community-excel-button:focus-within { outline: 3px solid #86efac; outline-offset: 3px; }
+.community-excel-button input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.community-excel-import small {
+  display: block;
+  margin-top: 10px;
+  color: #166534;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+/* Keep community creation actions reachable at desktop and laptop heights. */
+.community-create-modal {
+  width: min(720px, 100%);
+  max-height: calc(100dvh - 36px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 28px;
+  scrollbar-gutter: stable;
+}
+.community-create-modal .modal-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 0 -28px 16px;
+  padding: 20px 28px 16px;
+  background: #fff;
+  border-bottom: 1px solid #e3ebe6;
+}
+.community-create-modal .modal-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin: 20px -28px 0;
+  padding: 16px 28px;
+  background: #fff;
+  border-top: 1px solid #dfe6e2;
+  box-shadow: 0 -8px 20px #10231b08;
+}
+.community-create-modal .modal-actions > button {
+  min-height: 44px;
+  padding: 10px 20px;
+  font-size: 13px;
+}
+.community-create-modal > form { display: contents; }
+.community-create-modal label { font-size: 12px; }
+.community-create-modal input,
+.community-create-modal select { font-size: 13px; }
+.community-create-modal .community-excel-button { font-size: 14px; }
+@media (max-width: 600px) {
+  .community-create-modal { padding-inline: 18px; }
+  .community-create-modal .modal-head,
+  .community-create-modal .modal-actions {
+    margin-inline: -18px;
+    padding-inline: 18px;
+  }
+}
+
+.modal-backdrop:has(.community-create-modal) { z-index: 110; }
+
+.community-workspace-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.community-workspace-cards > button { padding: 26px; text-align: left; border: 1px solid #dbe7df; border-radius: 16px; background: white; color: #245c46; cursor: pointer; box-shadow: 0 4px 16px #10231b05; }
+.community-workspace-cards > button:hover { border-color: #257454; background: #f5faf7; }
+.community-workspace-cards > button:focus-visible { outline: 3px solid #65a187; outline-offset: 3px; }
+.community-workspace-cards strong { display: block; margin-top: 18px; font-size: 32px; }
+.community-workspace-cards h2 { margin: 8px 0; font-size: 18px; color: #20392b; }
+.community-workspace-cards p { margin: 0 0 22px; color: #697d70; font-size: 13px; line-height: 1.5; }
+.community-workspace-cards span { font-size: 13px; font-weight: 700; }
+.community-workspace-details { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-top: 24px; color: #697d70; font-size: 12px; }
+.community-workspace-details button { border: 0; background: none; color: #a24940; cursor: pointer; }
+@media(max-width: 900px) { .community-workspace-cards { grid-template-columns: 1fr; } }
+
+/* Community directory: compact cards that use the available desktop width. */
+.community-cards {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.community-cards .community-card { min-width: 0; }
+.community-cards .community-cover { height: 78px; gap: 8px; }
+.community-cards .community-cover > svg { width: 28px; height: 28px; }
+.community-cards .community-info { padding: 14px; }
+.community-cards .community-info h3 { font-size: 16px; overflow-wrap: anywhere; }
+.community-cards .community-info > div { gap: 10px; flex-wrap: wrap; }
+.community-cards .community-info > div > div { min-width: 0; }
+.community-cards .community-info > div span { font-size: 10px; }
+.community-cards .community-info > div b { font-size: 19px; }
+.community-cards .add-community { min-height: 250px; padding: 16px; text-align: center; }
+@media (max-width: 850px) {
+  .community-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .community-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .community-cards { grid-template-columns: 1fr; }
+}
+
+/* Match the opening selector to the four-column community directory. */
+.hub-container { max-width: 1440px; }
+.hub-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.hub-grid .hub-card { min-width: 0; }
+.hub-grid .hub-card-header { height: 78px; padding: 14px; }
+.hub-grid .hub-card-body { padding: 16px 14px; }
+.hub-grid .hub-card-main-info h3 { font-size: 18px; overflow-wrap: anywhere; }
+.hub-grid .hub-card-main-info p { white-space: normal; overflow-wrap: anywhere; }
+.hub-grid .hub-card-tag { font-size: 8px; padding: 4px 6px; }
+.hub-grid .hub-card-add { min-height: 250px; padding: 16px; }
+@media (max-width: 850px) {
+  .hub-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .hub-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .hub-grid { grid-template-columns: 1fr; }
+}

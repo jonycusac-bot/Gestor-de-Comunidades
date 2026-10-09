@@ -51,3 +51,21 @@ Producto web comercial para administradores de fincas: gestionar varias comunida
 ## Mensaje breve para OmniRoute u otro agente
 
 > Continúa el único proyecto `jonycusac-bot/Gestor-de-Comunidades` desde la rama `main`. Lee primero `AGENTS.md`, `docs/CONTINUIDAD.md`, `README.md` y los últimos commits. No uses ZIP antiguos ni supongas que AI Studio o Cloudflare reflejan GitHub. Revisa el código actual y ejecuta la demo local en `http://localhost:3000` antes de cambiarla. El usuario quiere una demo comercial multi-comunidad para administradores, con Terrazas de Bel Air como piloto. Indica qué funciona realmente, implementa la tarea que te dé y actualiza el documento de continuidad si cambias el estado.
+
+## Actualización — 09/10/2026
+
+- El alta de comunidad destaca la importación desde Excel en un bloque verde antes de las opciones manual y de ejemplo, tanto desde el selector inicial como desde el panel. Incluye botón de selección y confirmación del número de viviendas y portales preparados. No cambia el formato ni el almacenamiento de la importación.
+
+- El formulario de alta se adapta a PC con ancho máximo de 720 px, desplazamiento interno limitado al alto de pantalla y cabecera/botones de acción fijos dentro de la ventana para mantener accesible Crear comunidad tras importar Excel.
+
+- Al seleccionar una comunidad se abre su panel exclusivo con tarjetas de Propietarios, Avisos y noticias y Pendientes de pago. Esta última abre propietarios filtrados por pago pendiente; los contadores se calculan de los registros visibles. La lista de comunidades permanece en el selector general, accesible desde Salir o Ver todas.
+
+- Aclaración de navegación: se conserva Comunidades en la barra lateral y abre el listado completo dentro del panel. Al pulsar una tarjeta se abre el panel exclusivo de esa comunidad con sus opciones centrales.
+
+- Se retira el botón lateral Cambiar comunidad / Salir señalado por el usuario. Comunidades sigue abriendo el listado completo.
+
+- El listado de Comunidades usa tarjetas compactas en cuatro columnas para PC ancho, tres hasta 1250 px, dos hasta 1000 px y una en móvil.
+
+- Ajuste solicitado: cuatro columnas desde 851 px de ventana; tres hasta 850 px y dos hasta 700 px (una hasta 600 px).
+
+- La pantalla inicial (CommunitySelectorHub) también muestra cuatro tarjetas por fila desde 851 px, incluida Registrar nueva comunidad, con tarjetas compactas y contenedor máximo de 1440 px.
