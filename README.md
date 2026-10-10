@@ -45,3 +45,7 @@ En Comunicaciones, el envío general es una simulación. Terrazas de Bel Air per
 Configurar en `.env` local (excluido de GitHub): `EMAIL_TEST_ENABLED=true`, `EMAIL_TEST_RECIPIENT=tu-correo-de-resend` y `RESEND_API_KEY=tu-clave`. Reiniciar `npm run dev`. No usar variables `VITE_` para la clave ni publicarla. La prueba está desactivada en producción y solo acepta conexiones locales.
 
 Estado comprobado el 09/10/2026: correo aceptado por Resend y recepción confirmada por el usuario. Para cada envío, la aceptación del proveedor no implica por sí sola entrega al buzón.
+
+## Almacenamiento privado
+
+Documentos y Juntas usan Supabase al iniciar sesión con cuenta FincaFlow. Ver demostración conserva archivos solo en el navegador. Instalación inicial: `docs/supabase-storage.sql`. Acceso privado por cuenta; usa la misma cuenta y comunidad ficticia predefinida para revisar desde otro equipo. Los PDF existentes no se migran automáticamente. Comunidades personalizadas, censo y comunicaciones siguen siendo locales. Publicación autorizada el 10/10/2026. Pendiente prueba autenticada con cuenta FincaFlow del usuario.

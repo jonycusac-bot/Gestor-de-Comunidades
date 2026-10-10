@@ -1,5 +1,10 @@
 # Continuidad del proyecto — 18/09/2026
 
+## Publicación de Supabase autorizada — 10/10/2026
+
+- El usuario autoriza publicar la conexión privada de Documentos y Juntas en GitHub y Vercel. Pendiente verificar despliegue concreto tras push.
+- Lint/build y comprobaciones simuladas correctas; sigue pendiente prueba de subida real con cuenta FincaFlow del usuario. Ver demostración sigue local. No se migran PDF previos.
+
 ## Publicación autorizada — 10/10/2026
 
 - El usuario autoriza guardar en GitHub y Vercel los cambios locales de Documentos (PDF por comunidad), Juntas (convocatoria/acta, edición y prueba por correo), eliminación del historial de Comunicaciones y ajustes de tabla.
@@ -89,6 +94,15 @@ Producto web comercial para administradores de fincas: gestionar varias comunida
 - No se ha verificado que la URL de AI Studio muestre todos los commits recientes. No presentar una URL como versión actual sin comprobarla.
 
 ## Siguiente trabajo útil
+
+## Supabase privado — preparación local 10/10/2026
+
+- Autorizado conectar Supabase, sin autorización nueva para publicar en GitHub/Vercel. Remoto main comprobado: a7cd0fe, coincide con local.
+- Aplicado docs/supabase-storage.sql al proyecto wytejpxqujzazgyfdobt: bucket privado fincaflow-private, PDF máximo 10 MB, tabla fincaflow_files con RLS por auth.uid(). Solo lectura/inserción de objetos bajo carpeta propia y lectura/inserción/edición de metadatos propios. No políticas de borrado. SQL de instalación inicial; no repetir las declaraciones create policy sin comprobar antes.
+- Documentos y Juntas usan nube al iniciar sesión y conservan IndexedDB en Ver demostración. No se migran automáticamente archivos locales. Una misma cuenta puede recuperar archivos en otro navegador; comunidades/censo/comunicaciones siguen locales. Usar las comunidades ficticias predefinidas para comprobar entre equipos.
+- Acceso REST con clave publicable, sin service_role ni secretos nuevos. Renovación de sesión al expirar. Adjuntos privados descargados como Blob, metadatos guardados después de los PDF; editar sin sustituir conserva archivo. Las versiones sustituidas y subidas sin metadatos por fallo pueden quedar en Storage: pendiente limpieza controlada para uso continuado.
+- Lint/build correctos (aviso conocido de bundle), pruebas con fetch simulado: orden de guardado, conservación de adjuntos al editar, recuperación, rechazo de rutas de otra cuenta y renovación. Petición anónima a tabla devuelve lista vacía. Falta prueba real autenticada de subida/recarga/otro equipo: solicitada entrada del usuario en localhost con cuenta FincaFlow. No afirmar que la subida real está verificada.
+- La URL de Vercel mantiene la versión anterior hasta autorización y publicación. No se enviaron correos ni PDFs reales.
 
 1. Probar visualmente el flujo entrada → selector vacío de selección → comunidad → volver al selector, en escritorio y móvil.
 2. Convertir el censo piloto a 12 portales, con estructuras variables de portal, planta y puerta.

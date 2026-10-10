@@ -1,5 +1,5 @@
-const SUPABASE_URL = (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_SUPABASE_URL) || "https://wytejpxqujzazgyfdobt.supabase.co";
-const SUPABASE_KEY = (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) || "sb_publishable_HbLV5Jp1xxD4qHFvNnacYA_Kt_AoOvr";
+export const SUPABASE_URL = (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_SUPABASE_URL) || "https://wytejpxqujzazgyfdobt.supabase.co";
+export const SUPABASE_KEY = (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) || "sb_publishable_HbLV5Jp1xxD4qHFvNnacYA_Kt_AoOvr";
 const SESSION_KEY = "fincaflow-auth-session";
 
 export type AuthSession = {
@@ -31,7 +31,8 @@ export async function restoreSession() {
   const raw = localStorage.getItem(SESSION_KEY);
   if (!raw) return null;
   const session = JSON.parse(raw) as AuthSession;
-  await request("user", { headers: { Authorization: `Bearer ${session.access_token}` } });
+  try { await request("user", { headers: { Authorization: `Bearer ${session.access_token}` } }); }
+  catch { return refreshSession(session); }
   return session;
 }
 
@@ -42,4 +43,16 @@ export async function signOut(session: AuthSession | null) {
     }).catch(() => undefined);
   }
   localStorage.removeItem(SESSION_KEY);
+}
+
+let refreshing: Promise<AuthSession> | null = null;
+export function refreshSession(session: AuthSession): Promise<AuthSession> {
+  if (!refreshing) refreshing = request<AuthSession>("token?grant_type=refresh_token", {
+    method: "POST", body: JSON.stringify({ refresh_token: session.refresh_token }),
+  }).then(next => {
+    Object.assign(session, next);
+    localStorage.setItem(SESSION_KEY, JSON.stringify(next));
+    return session;
+  }).finally(() => { refreshing = null; });
+  return refreshing;
 }

@@ -1,3 +1,5 @@
+import { useSession } from './auth-gate';
+import { loadCloud, saveCloud } from '../lib/cloud-files';
 import React, { useEffect, useState } from 'react';
 import { TestEmail } from './test-email';
 import { CommunityModel } from '../data/communitiesData';
@@ -41,6 +43,7 @@ function MeetingPDF({ file, label }: { file: Attachment; label: string }) {
 }
 
 export function CommunityMeetings({ community }: { community: CommunityModel; key?: string }) {
+  const session = useSession();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [tab, setTab] = useState<'upcoming' | 'completed'>('upcoming');
   const [formStatus, setFormStatus] = useState<'upcoming' | 'completed'>('upcoming');
@@ -54,9 +57,10 @@ export function CommunityMeetings({ community }: { community: CommunityModel; ke
   const [message, setMessage] = useState('');
   useEffect(() => {
     let alive = true;
-    meetingStore(community.id).then(result => { if (alive) setMeetings(result); }).catch(() => { if (alive) setError('No se pudieron cargar las juntas de este navegador.'); }).finally(() => { if (alive) setLoading(false); });
+    setLoading(true); setError('');
+    (session ? loadCloud<Meeting>(session, community.id, 'meetings') : meetingStore(community.id)).then(result => { if (alive) setMeetings(result); }).catch(cause => { if (alive) setError(cause instanceof Error ? cause.message : 'No se pudieron cargar las juntas.'); }).finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [community.id]);
+  }, [community.id, session]);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -74,7 +78,11 @@ export function CommunityMeetings({ community }: { community: CommunityModel; ke
       if (!title) throw new Error('Escribe el título de la junta.');
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || new Date(`${date}T12:00:00Z`).toISOString().slice(0, 10) !== date) throw new Error('Indica una fecha válida.');
       const entry: Meeting = { ...(editing || completing || {}), id: editing?.id || completing?.id || crypto.randomUUID(), communityId: community.id, title, date, time: String(data.get('time') || ''), place: String(data.get('place') || '').trim(), status, ...(file ? (status === 'upcoming' ? { invitation: file } : { minutes: file }) : {}), ...(invitation ? { invitation } : {}) };
-      const result = await meetingStore(community.id, entry);
+      let result: Meeting[];
+      if (session) {
+        await saveCloud(session, 'meetings', entry);
+        result = [...meetings.filter(item => item.id !== entry.id), entry];
+      } else result = await meetingStore(community.id, entry);
       setMeetings(result); setTab(status); setShowForm(false); setCompleting(null); setEditing(null);
       setMessage(editing ? 'Cambios de la junta guardados.' : status === 'completed' ? 'Junta realizada guardada con su acta PDF.' : 'Próxima junta guardada con su convocatoria PDF.');
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'No se pudo guardar la junta. Comprueba el espacio disponible en el navegador.'); }
@@ -83,7 +91,7 @@ export function CommunityMeetings({ community }: { community: CommunityModel; ke
 
   const visible = meetings.filter(meeting => meeting.status === tab).sort((a, b) => tab === 'upcoming' ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date));
   return <section className="meetings-section">
-    <div className="document-upload-bar"><p>Juntas de {community.name}. PDF de hasta 10 MB, guardados solo en este navegador.</p><button className="primary" disabled={loading} onClick={() => { setEditing(null); setCompleting(null); setFormStatus(tab); setError(''); setShowForm(true); }}>Añadir junta</button></div>
+    <div className="document-upload-bar"><p>Juntas de {community.name}. PDF de hasta 10 MB. {session ? 'Guardados en Supabase para tu cuenta.' : 'Guardados solo en este navegador.'} Usa documentos ficticios.</p><button className="primary" disabled={loading} onClick={() => { setEditing(null); setCompleting(null); setFormStatus(tab); setError(''); setShowForm(true); }}>Añadir junta</button></div>
     <div className="meetings-tabs" role="tablist" aria-label="Estado de las juntas">{(['upcoming', 'completed'] as const).map(status => <button key={status} role="tab" aria-selected={tab === status} onClick={() => setTab(status)}>{status === 'upcoming' ? 'Próximas juntas' : 'Juntas realizadas'} <b>{meetings.filter(meeting => meeting.status === status).length}</b></button>)}</div>
     {message && <p role="status">{message}</p>}{error && !showForm && <p role="alert" className="document-error">{error}</p>}
     {loading ? <p role="status">Cargando juntas…</p> : !visible.length && <div className="meeting-empty">Todavía no hay {tab === 'upcoming' ? 'próximas juntas' : 'juntas realizadas'} registradas. Pulsa Añadir junta para adjuntar su PDF.</div>}

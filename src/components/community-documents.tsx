@@ -1,3 +1,5 @@
+import { useSession } from './auth-gate';
+import { loadCloud, saveCloud } from '../lib/cloud-files';
 import React, { useEffect, useState } from 'react';
 import { CommunityModel } from '../data/communitiesData';
 import { Icon } from './icon';
@@ -36,7 +38,7 @@ async function saveDocument(document: SavedDocument) {
   });
 }
 
-function DocumentFile({ document }: { document: SavedDocument; key?: string }) {
+function DocumentFile({ document, cloud }: { document: SavedDocument; cloud: boolean; key?: string }) {
   const [url, setUrl] = useState('');
   useEffect(() => {
     const next = URL.createObjectURL(document.file);
@@ -45,12 +47,13 @@ function DocumentFile({ document }: { document: SavedDocument; key?: string }) {
   }, [document.file]);
   return <article className="data-row documents-row">
     <span><strong>{document.title}</strong><small>{document.filename} · {(document.file.size / 1024).toFixed(0)} KB</small></span>
-    <span>{document.category}</span><span>{document.date}</span><span><em className="paid">Guardado local</em></span>
+    <span>{document.category}</span><span>{document.date}</span><span><em className="paid">{cloud ? 'Guardado en nube' : 'Guardado local'}</em></span>
     <span className="document-links"><a href={url || undefined} target="_blank" rel="noopener noreferrer">Abrir</a><a href={url || undefined} download={document.filename}>Descargar</a></span>
   </article>;
 }
 
 export function CommunityDocuments({ community, filter }: { community: CommunityModel; filter: string; key?: string }) {
+  const session = useSession();
   const [documents, setDocuments] = useState<SavedDocument[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -59,9 +62,10 @@ export function CommunityDocuments({ community, filter }: { community: Community
   const [message, setMessage] = useState('');
   useEffect(() => {
     let alive = true;
-    loadDocuments(community.id).then(result => { if (alive) setDocuments(result); }).catch(() => { if (alive) setError('No se pudieron cargar los PDF guardados en este navegador.'); }).finally(() => { if (alive) setLoading(false); });
+    setLoading(true); setError('');
+    (session ? loadCloud<SavedDocument>(session, community.id, 'documents') : loadDocuments(community.id)).then(result => { if (alive) setDocuments(result); }).catch(cause => { if (alive) setError(cause instanceof Error ? cause.message : 'No se pudieron cargar los PDF.'); }).finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [community.id]);
+  }, [community.id, session]);
 
   async function upload(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -77,7 +81,7 @@ export function CommunityDocuments({ community, filter }: { community: Community
       const title = String(form.get('title') || '').trim();
       if (!title) throw new Error('Escribe un título para el documento.');
       const document: SavedDocument = { id: crypto.randomUUID(), communityId: community.id, title, category: String(form.get('category') || 'Otros'), date: new Date().toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid' }), filename: file.name, file: file.slice(0, file.size, 'application/pdf') };
-      await saveDocument(document);
+      if (session) await saveCloud(session, 'documents', document); else await saveDocument(document);
       setDocuments(previous => [document, ...previous]);
       setShowForm(false);
       setMessage(`PDF guardado en Documentos de ${community.name}.`);
@@ -88,13 +92,13 @@ export function CommunityDocuments({ community, filter }: { community: Community
 
   const matches = (title: string) => title.toLocaleLowerCase('es-ES').includes(filter.toLocaleLowerCase('es-ES'));
   return <>
-    <div className="document-upload-bar"><p>Los PDF se guardan solo en este navegador y para esta comunidad. Máximo 10 MB por archivo.</p><button className="primary" disabled={loading} onClick={() => { setShowForm(true); setError(''); setMessage(''); }}><Icon name="plus" size={18} /> Subir PDF</button></div>
+    <div className="document-upload-bar"><p>{session ? 'Almacenamiento privado en Supabase. Disponible desde otros equipos al entrar con la misma cuenta.' : 'Modo demostración: los PDF se guardan solo en este navegador.'} Máximo 10 MB por archivo. Usa documentos ficticios para la demo.</p><button className="primary" disabled={loading} onClick={() => { setShowForm(true); setError(''); setMessage(''); }}><Icon name="plus" size={18} /> Subir PDF</button></div>
     {message && <p role="status">{message}</p>}
     {error && <p role="alert" className="document-error">{error}</p>}
     {loading && <p role="status">Cargando documentos…</p>}
     <div className="data-panel">
       <div className="data-head documents-head"><span>Documento</span><span>Categoría</span><span>Fecha</span><span>Estado</span><span>Archivo</span></div>
-      {documents.filter(d => matches(d.title)).map(document => <DocumentFile key={document.id} document={document} />)}
+      {documents.filter(d => matches(d.title)).map(document => <DocumentFile key={document.id} document={document} cloud={!!session} />)}
       {community.documents.filter(d => matches(d.title)).map((d, index) => <article className="data-row documents-row" key={`${d.title}-${index}`}><span><strong>{d.title}</strong><small>{d.files} · Ejemplo sin PDF adjunto</small></span><span>{d.category}</span><span>{d.date}</span><span><em className={d.status === 'Publicado' ? 'paid' : 'draft'}>{d.status}</em></span><span>Ejemplo</span></article>)}
       {!loading && !documents.some(d => matches(d.title)) && !community.documents.some(d => matches(d.title)) && <p className="document-empty">No hay documentos que coincidan con la búsqueda.</p>}
     </div>

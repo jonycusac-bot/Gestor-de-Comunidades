@@ -1,8 +1,11 @@
 "use client";
 
-import { FormEvent, ReactNode, useEffect, useState } from "react";
+import { FormEvent, ReactNode, createContext, useContext, useEffect, useState } from "react";
 import { AuthSession, restoreSession, signIn, signOut } from "@/lib/supabase-auth";
 import styles from "./auth-gate.module.css";
+
+const SessionContext = createContext<AuthSession | null>(null);
+export const useSession = () => useContext(SessionContext);
 
 export function AuthGate({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(null);
@@ -46,5 +49,5 @@ export function AuthGate({ children }: { children: ReactNode }) {
     <aside className={styles.visual}><div><span>Multi-comunidad</span><span>Gestión centralizada</span><span>Información segura</span></div><h2>Gestión integral de comunidades</h2><p>Plataforma profesional para administradores de fincas</p></aside>
   </main>;
 
-  return <>{children}<div className={styles.session}><span>{demo ? "Modo demostración" : session?.user.email}</span><button onClick={async () => { if (demo) setDemo(false); else { await signOut(session); setSession(null); } }}>Salir</button></div></>;
+  return <SessionContext.Provider value={demo ? null : session}>{children}<div className={styles.session}><span>{demo ? "Modo demostración" : session?.user.email}</span><button onClick={async () => { if (demo) setDemo(false); else { await signOut(session); setSession(null); } }}>Salir</button></div></SessionContext.Provider>;
 }
