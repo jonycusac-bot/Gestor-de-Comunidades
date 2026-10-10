@@ -6,6 +6,13 @@
 - `.vercelignore` excluye archivos `.env`, documentación, dependencias y compilaciones locales al subir con CLI. No copiar secretos locales a Vercel. Los datos de demo siguen en localStorage por navegador.
 - Lint y build completos correctos, con el aviso conocido de tamaño de bundle. Vercel exige iniciar sesión; todavía no hay despliegue ni URL pública verificados. La configuración está en el árbol local, pendiente de publicar junto con el despliegue.
 
+## Despliegue Vercel completado — 10/10/2026
+
+- Nuevo proyecto `fincaflow` en el equipo `jonaans-projects`, conectado a `jonycusac-bot/Gestor-de-Comunidades`, rama `main`. Los proyectos existentes de racks no se han modificado.
+- URL de producción: https://fincaflow-phi.vercel.app . Primer despliegue confirmado por Vercel desde `fcb8df9` (configuración estática publicada en GitHub).
+- Comprobado en esa URL: pantalla de acceso, Ver demostración, selector sin comunidad elegida, apertura de Terrazas de Bel Air y recarga. La recarga vuelve a la entrada y permite entrar otra vez en la demo. No se han probado credenciales Supabase ni enviado correos.
+- Se mantienen los límites de la demo estática descritos arriba: localStorage por navegador, sin servidor Express ni prueba real de correo en Vercel.
+
 ## Fuente de verdad y forma de trabajo
 
 - Repositorio único: https://github.com/jonycusac-bot/Gestor-de-Comunidades, rama `main`.
