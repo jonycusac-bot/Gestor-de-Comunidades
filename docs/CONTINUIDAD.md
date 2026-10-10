@@ -1,5 +1,11 @@
 # Continuidad del proyecto — 18/09/2026
 
+## Página principal con gestión lateral — 10/10/2026
+
+- El selector inicial incorpora la misma barra lateral de gestión del panel, conservando las tarjetas compactas y la entrada sin comunidad seleccionada. La pantalla de acceso no cambia.
+- Antes de seleccionar una comunidad, pulsar un módulo indica que debe elegirse una; al elegirla se abre ese módulo. Volver al selector restablece Comunidades. En móvil la barra se abre con el botón de menú.
+- Lint y build correctos, con aviso conocido de tamaño. Comprobado visualmente en localhost: tarjetas y lateral juntos, y Economía → elegir comunidad → Economía de esa comunidad.
+
 ## Preparación Vercel — 10/10/2026
 
 - Se añade `vercel.json` para la demo estática Vite: comando `npx vite build`, salida `dist` y recarga de rutas SPA. Las rutas `/api/*` quedan fuera de la reescritura. Express y sus integraciones no se alojan en esta modalidad; la prueba de correo real sigue siendo exclusivamente local.

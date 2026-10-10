@@ -82,7 +82,8 @@ export function Dashboard() {
   function handleSelectCommunity(id: string) {
     setSelectedCommunityId(id);
     setDropdownOpen(false);
-    setActive("Comunidades");
+    setActive(selectedCommunityId ? "Comunidades" : active);
+    setSidebar(false);
     const target = communities.find((c) => c.id === id);
     if (target) {
       action(`Comunidad abierta: ${target.name}`);
@@ -91,6 +92,8 @@ export function Dashboard() {
 
   function handleReturnToHub() {
     setSelectedCommunityId(null);
+    setActive("Comunidades");
+    setSidebar(false);
     setDropdownOpen(false);
   }
 
@@ -410,15 +413,77 @@ export function Dashboard() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  const managementSidebar = (
+      <aside className={`sidebar ${sidebar ? "is-open" : ""}`}>
+        <div
+          className="brand"
+          style={{ cursor: "pointer" }}
+          onClick={handleReturnToHub}
+          title="Volver a la selección de comunidades"
+        >
+          <span className="brand-mark">
+            <Icon name="building" size={22} />
+          </span>
+          <span>
+            Finca<span>Flow</span>
+          </span>
+        </div>
+
+        <div className="workspace-label">
+          {selectedCommunityId ? currentCommunity.name.toUpperCase() : "GESTIÓN DE COMUNIDADES"}
+        </div>
+        <nav>
+          {nav.map(([icon, label]) => (
+            <button
+              id={`nav-${label.toLowerCase().replace(/\s+/g, "-")}`}
+              className={active === label || (label === "Comunidades" && active === "Listado de comunidades") ? "active" : ""}
+              onClick={() => {
+                setActive(label === "Comunidades" ? (selectedCommunityId ? "Listado de comunidades" : "Comunidades") : label);
+                if (!selectedCommunityId && label !== "Comunidades") action(`Selecciona una comunidad para abrir ${label.toLowerCase()}`);
+                setSidebar(false);
+              }}
+              key={label}
+            >
+              <Icon name={icon} />
+              <span>{label}</span>
+              {selectedCommunityId && label === "Avisos y noticias" && (
+                <b>{currentCommunity.openCommunications}</b>
+              )}
+            </button>
+          ))}
+        </nav>
+        <div className="sidebar-bottom">
+          <button onClick={() => { setActive("Configuración"); setSidebar(false); if (!selectedCommunityId) action("Selecciona una comunidad para abrir su configuración"); }}>
+            <Icon name="settings" />
+            <span>Configuración</span>
+          </button>
+          <div className="profile">
+            <div className="avatar">JC</div>
+            <div>
+              <strong>Jonatan Cusac</strong>
+              <small>Administrador general</small>
+            </div>
+            <Icon name="arrow" size={16} />
+          </div>
+        </div>
+      </aside>
+  );
+
   // If no community is selected yet (or user returned to the list), render the Community Selector Hub
   if (!selectedCommunityId) {
     return (
       <>
+        <div className="app-shell hub-shell">
+        {managementSidebar}
         <CommunitySelectorHub
+          onToggleMenu={() => setSidebar(!sidebar)}
+          requestedSection={active}
           communities={communities}
           onSelectCommunity={handleSelectCommunity}
           onOpenAddModal={() => setShowAddCommunityModal(true)}
         />
+        </div>
+        {sidebar && <button className="scrim" onClick={() => setSidebar(false)} aria-label="Cerrar menú" />}
 
         {/* Modal de Crear Comunidad accesible desde el Hub */}
         {showAddCommunityModal && (
@@ -612,58 +677,7 @@ export function Dashboard() {
 
   return (
     <div className="app-shell">
-      <aside className={`sidebar ${sidebar ? "is-open" : ""}`}>
-        <div
-          className="brand"
-          style={{ cursor: "pointer" }}
-          onClick={handleReturnToHub}
-          title="Volver a la selección de comunidades"
-        >
-          <span className="brand-mark">
-            <Icon name="building" size={22} />
-          </span>
-          <span>
-            Finca<span>Flow</span>
-          </span>
-        </div>
-
-        <div className="workspace-label">
-          {currentCommunity.name.toUpperCase()}
-        </div>
-        <nav>
-          {nav.map(([icon, label]) => (
-            <button
-              id={`nav-${label.toLowerCase().replace(/\s+/g, "-")}`}
-              className={active === label || (label === "Comunidades" && active === "Listado de comunidades") ? "active" : ""}
-              onClick={() => {
-                setActive(label === "Comunidades" ? "Listado de comunidades" : label);
-                setSidebar(false);
-              }}
-              key={label}
-            >
-              <Icon name={icon} />
-              <span>{label}</span>
-              {label === "Avisos y noticias" && (
-                <b>{currentCommunity.openCommunications}</b>
-              )}
-            </button>
-          ))}
-        </nav>
-        <div className="sidebar-bottom">
-          <button onClick={() => setActive("Configuración")}>
-            <Icon name="settings" />
-            <span>Configuración</span>
-          </button>
-          <div className="profile">
-            <div className="avatar">JC</div>
-            <div>
-              <strong>Jonatan Cusac</strong>
-              <small>Administrador general</small>
-            </div>
-            <Icon name="arrow" size={16} />
-          </div>
-        </div>
-      </aside>
+      {managementSidebar}
 
       <main>
         <header>

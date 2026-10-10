@@ -82,6 +82,10 @@ header { height:72px; display:flex; align-items:center; justify-content:space-be
 
 /* Hub Selector de Comunidades */
 .hub-page { min-height: 100vh; background-color: var(--bg); display: flex; flex-direction: column; }
+.hub-shell > .hub-page { grid-column: 2; min-width: 0; }
+.hub-heading { margin-bottom: 24px; }
+.hub-heading h1 { margin: 0 0 6px; font-family: Georgia, serif; font-size: 28px; }
+.hub-heading p { margin: 0; color: var(--muted); font-size: 13px; }
 .hub-topbar { height: 70px; background: #fff; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; }
 .hub-brand { display: flex; align-items: center; gap: 12px; }
 .hub-logo { width: 36px; height: 36px; border-radius: 9px; background: #257454; color: #fff; font-family: Georgia, serif; font-size: 18px; font-weight: 700; display: grid; place-items: center; box-shadow: 0 4px 12px rgba(37,116,84,0.2); }

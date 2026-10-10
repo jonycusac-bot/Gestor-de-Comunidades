@@ -5,6 +5,8 @@ import { Icon } from "./icon";
 import { CommunityModel } from "../data/communitiesData";
 
 interface CommunitySelectorHubProps {
+  onToggleMenu?: () => void;
+  requestedSection?: string;
   communities: CommunityModel[];
   onSelectCommunity: (id: string) => void;
   onOpenAddModal: () => void;
@@ -13,6 +15,8 @@ interface CommunitySelectorHubProps {
 }
 
 export function CommunitySelectorHub({
+  onToggleMenu,
+  requestedSection,
   communities,
   onSelectCommunity,
   onOpenAddModal,
@@ -35,6 +39,7 @@ export function CommunitySelectorHub({
       {/* Barra superior de cabecera */}
       <header className="hub-topbar">
         <div className="hub-brand">
+          {onToggleMenu && <button className="mobile-menu" type="button" onClick={onToggleMenu} aria-label="Abrir menú"><Icon name="menu" /></button>}
           <div className="hub-logo">F</div>
           <div>
             <strong>FincaFlow</strong>
@@ -64,6 +69,7 @@ export function CommunitySelectorHub({
 
       {/* Contenido principal */}
       <main className="hub-container">
+        <div className="hub-heading"><h1>Comunidades</h1><p>{requestedSection && requestedSection !== "Comunidades" ? `Selecciona una comunidad para abrir ${requestedSection.toLowerCase()}.` : "Selecciona una comunidad para acceder a su gestión."}</p></div>
         {/* Barra de búsqueda y botón añadir */}
         <div className="hub-actions-bar">
           <div className="hub-search-wrapper">
