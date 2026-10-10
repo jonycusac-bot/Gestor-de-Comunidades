@@ -5,6 +5,7 @@
 - El selector inicial incorpora la misma barra lateral de gestión del panel, conservando las tarjetas compactas y la entrada sin comunidad seleccionada. La pantalla de acceso no cambia.
 - Antes de seleccionar una comunidad, pulsar un módulo indica que debe elegirse una; al elegirla se abre ese módulo. Volver al selector restablece Comunidades. En móvil la barra se abre con el botón de menú.
 - Lint y build correctos, con aviso conocido de tamaño. Comprobado visualmente en localhost: tarjetas y lateral juntos, y Economía → elegir comunidad → Economía de esa comunidad.
+- Cambio publicado en `main` con `43c29b0` y comprobado después en https://fincaflow-phi.vercel.app : acceso a demo, tarjetas compactas y menú lateral visibles en la página principal.
 
 ## Preparación Vercel — 10/10/2026
 
