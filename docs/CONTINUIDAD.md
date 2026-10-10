@@ -1,5 +1,11 @@
 # Continuidad del proyecto — 18/09/2026
 
+## Preparación Vercel — 10/10/2026
+
+- Se añade `vercel.json` para la demo estática Vite: comando `npx vite build`, salida `dist` y recarga de rutas SPA. Las rutas `/api/*` quedan fuera de la reescritura. Express y sus integraciones no se alojan en esta modalidad; la prueba de correo real sigue siendo exclusivamente local.
+- `.vercelignore` excluye archivos `.env`, documentación, dependencias y compilaciones locales al subir con CLI. No copiar secretos locales a Vercel. Los datos de demo siguen en localStorage por navegador.
+- Lint y build completos correctos, con el aviso conocido de tamaño de bundle. Vercel exige iniciar sesión; todavía no hay despliegue ni URL pública verificados. La configuración está en el árbol local, pendiente de publicar junto con el despliegue.
+
 ## Fuente de verdad y forma de trabajo
 
 - Repositorio único: https://github.com/jonycusac-bot/Gestor-de-Comunidades, rama `main`.

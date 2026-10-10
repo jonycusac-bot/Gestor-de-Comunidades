@@ -30,6 +30,14 @@ Documentación:
 - `docs/DECISIONES_DOCUMENTOS_Y_JUNTAS.md`
 - `docs/ESTADO_Y_PROXIMOS_PASOS.md`
 
+## Despliegue de la demo en Vercel
+
+Importar `jonycusac-bot/Gestor-de-Comunidades`, rama `main`, desde Vercel. Usar la raíz del repositorio y el preset Vite. `vercel.json` establece `npx vite build` y salida `dist`, con rutas de la SPA. No ejecutar el build de Express para este alojamiento estático: así tampoco se publica su código ni sus mapas de fuentes.
+
+No copiar el `.env` local a Vercel ni configurar claves de Resend para esta demo. El acceso **Ver demostración** y las operaciones locales funcionan sin variables de entorno. El servidor Express, sus rutas `/api/*`, la integración GitHub y la prueba real de correo no se despliegan con esta configuración. El acceso Supabase depende de su servicio externo. Los datos creados o importados siguen almacenándose solo en el navegador y no se comparten entre dispositivos.
+
+Después de desplegar, comprobar la URL concreta: entrada, Ver demostración, selector de comunidades, apertura de comunidad y recarga de página. Un build local correcto no confirma el despliegue.
+
 ## Correo de prueba local
 
 En Comunicaciones, el envío general es una simulación. Terrazas de Bel Air permite además una prueba real individual con Resend, limitada al destinatario configurado en el servidor.
