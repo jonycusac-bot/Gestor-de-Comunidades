@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { Icon } from "./icon";
+import { CommunityMeetings } from "./community-meetings";
+import { CommunityDocuments } from "./community-documents";
 import { PaymentsDemo } from "./payments-demo";
 import { EmailCommunications } from "./email-communications";
 import { initialCommunitiesList, CommunityModel, OwnerModel } from "../data/communitiesData";
@@ -1361,14 +1363,14 @@ function ModuleView({
           <h1>{title}</h1>
           <span>{subtitles[active] || "Módulo en preparación"}</span>
         </div>
-        {!["Economía", "Comunidades", "Listado de comunidades", "Pendientes de pago", "Propietarios", "Comunicaciones"].includes(active) && (
+        {!["Economía", "Comunidades", "Listado de comunidades", "Pendientes de pago", "Propietarios", "Comunicaciones", "Documentos", "Juntas"].includes(active) && (
           <button className="primary" onClick={() => setShowForm(true)}>
             <Icon name="plus" size={18} /> Nuevo
           </button>
         )}
       </div>
 
-      {!["Economía", "Comunidades", "Listado de comunidades", "Pendientes de pago", "Propietarios", "Comunicaciones"].includes(active) && (
+      {!["Economía", "Comunidades", "Listado de comunidades", "Pendientes de pago", "Propietarios", "Comunicaciones", "Juntas"].includes(active) && (
         <div className="module-toolbar">
           <label className="module-search">
             <Icon name="search" size={17} />
@@ -1378,8 +1380,7 @@ function ModuleView({
               placeholder={`Buscar en ${title.toLowerCase()}…`}
             />
           </label>
-          <button>Todos los estados ⌄</button>
-          <button>Más recientes ⌄</button>
+          {active !== "Documentos" && <><button>Todos los estados ⌄</button><button>Más recientes ⌄</button></>}
         </div>
       )}
 
@@ -1566,44 +1567,14 @@ function ModuleView({
       )}
 
       {/* Documentos de la comunidad activa */}
-      {active === "Documentos" && (
-        <div className="data-panel">
-          <div className="data-head documents-head">
-            <span>Documento</span>
-            <span>Categoría</span>
-            <span>Fecha</span>
-            <span>Estado</span>
-            <span></span>
-          </div>
-          {currentCommunity.documents
-            .filter((d) => d.title.toLowerCase().includes(filter.toLowerCase()))
-            .map((d) => (
-              <button
-                className="data-row documents-row"
-                key={d.title}
-                onClick={() => notify(`Abriendo ${d.title}`)}
-              >
-                <span>
-                  <strong>{d.title}</strong>
-                  <small>{d.files}</small>
-                </span>
-                <span>{d.category}</span>
-                <span>{d.date}</span>
-                <span>
-                  <em className={d.status === "Publicado" ? "paid" : "draft"}>
-                    {d.status}
-                  </em>
-                </span>
-                <Icon name="arrow" size={16} />
-              </button>
-            ))}
-        </div>
-      )}
+      {active === "Documentos" && <CommunityDocuments key={currentCommunity.id} community={currentCommunity} filter={filter} />}
+
+      {active === "Juntas" && <CommunityMeetings key={currentCommunity.id} community={currentCommunity} />}
 
       {active === "Economía" && <PaymentsDemo community={currentCommunity} />}
 
       {/* Módulos restantes */}
-      {!["Economía", "Comunidades", "Listado de comunidades", "Pendientes de pago", "Propietarios", "Comunicaciones", "Avisos y noticias", "Documentos"].includes(
+      {!["Economía", "Comunidades", "Listado de comunidades", "Pendientes de pago", "Propietarios", "Comunicaciones", "Avisos y noticias", "Documentos", "Juntas"].includes(
         active
       ) && (
         <div className="empty-module">

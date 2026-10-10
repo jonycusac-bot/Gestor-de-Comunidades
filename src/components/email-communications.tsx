@@ -15,10 +15,14 @@ export function EmailCommunications({ community }: { community: CommunityModel }
   const [history, setHistory] = useState<Communication[]>([]);
   const [message, setMessage] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
+  const [removedEntry, setRemovedEntry] = useState<Communication | null>(null);
+  const [historyMessage, setHistoryMessage] = useState("");
   const storageKey = `fincaflow-email-demo-v1-${community.id}`;
   const emails = emailRecipients(community);
   const recipients = selected.filter(email => emails.includes(email));
   useEffect(() => {
+    setSelectedHistoryId(null); setRemovedEntry(null); setHistoryMessage("");
     setSelected(emailRecipients(community)); setSubject(""); setBody(""); setPreview(false); setMessage(""); setExpanded(null); setHistory([]);
     try {
       const saved = localStorage.getItem(storageKey);
@@ -38,6 +42,28 @@ export function EmailCommunications({ community }: { community: CommunityModel }
       localStorage.setItem(storageKey, JSON.stringify(next)); setHistory(next); setPreview(false); setSubject(""); setBody("");
       setMessage(`Simulación registrada para ${recipients.length} direcciones. No se ha enviado ningún correo.`);
     } catch { setMessage("No se pudo guardar la simulación. El mensaje sigue disponible para reintentar."); }
+  }
+
+  function removeSelected() {
+    const entry = history.find(item => item.id === selectedHistoryId);
+    if (!entry) return;
+    const next = history.filter(item => item.id !== entry.id);
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(next));
+      setHistory(next); setRemovedEntry(entry); setSelectedHistoryId(null);
+      if (expanded === entry.id) setExpanded(null);
+      setHistoryMessage('Comunicado eliminado del historial. Puedes deshacerlo antes de salir de esta sección.');
+    } catch { setHistoryMessage('No se pudo eliminar el comunicado. Inténtalo de nuevo.'); }
+  }
+
+  function undoRemoval() {
+    if (!removedEntry) return;
+    const next = [...history, removedEntry].sort((a, b) => b.date.localeCompare(a.date));
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(next));
+      setHistory(next); setSelectedHistoryId(removedEntry.id); setRemovedEntry(null);
+      setHistoryMessage('Comunicado restaurado en el historial.');
+    } catch { setHistoryMessage('No se pudo restaurar el comunicado. Inténtalo de nuevo.'); }
   }
 
   return <div>
@@ -60,6 +86,6 @@ export function EmailCommunications({ community }: { community: CommunityModel }
       <TestEmail communityId={community.id} subject={subject} body={body} />
       {message && <p role="status" className="email-local-message">{message}</p>}
     </form>
-    <section className="email-history"><h2>Historial de comunicados de prueba</h2><p>Guardado solo en este navegador. «Simulado» no significa enviado ni entregado.</p>{!history.length && <p>Todavía no hay comunicados registrados para esta comunidad.</p>}{history.map(item => <article key={item.id}><button type="button" aria-expanded={expanded === item.id} onClick={() => setExpanded(expanded === item.id ? null : item.id)}><strong>{item.subject}</strong><span>{item.emails.length} direcciones · {new Date(item.date).toLocaleString("es-ES", { timeZone: "Europe/Madrid" })} · Simulado</span></button>{expanded === item.id && <div><p className="email-message-body">{item.body}</p><details><summary>Destinatarios registrados</summary>{item.emails.map(email => <p key={email}>{email}</p>)}</details></div>}</article>)}</section>
+    <section className="email-history"><h2>Historial de comunicados de prueba</h2><div className="email-history-actions"><button type="button" disabled={!history.some(item => item.id === selectedHistoryId)} onClick={removeSelected}>Eliminar seleccionada</button>{removedEntry && <button type="button" onClick={undoRemoval}>Deshacer eliminación</button>}</div>{historyMessage && <p role="status">{historyMessage}</p>}<p>Guardado solo en este navegador. «Simulado» no significa enviado ni entregado.</p>{!history.length && <p>Todavía no hay comunicados registrados para esta comunidad.</p>}{history.map(item => <article key={item.id}><label className="email-history-select"><input type="radio" name={`history-selection-${community.id}`} checked={selectedHistoryId === item.id} onChange={() => setSelectedHistoryId(item.id)} />Seleccionar: {item.subject}</label><button type="button" aria-expanded={expanded === item.id} onClick={() => setExpanded(expanded === item.id ? null : item.id)}><strong>{item.subject}</strong><span>{item.emails.length} direcciones · {new Date(item.date).toLocaleString("es-ES", { timeZone: "Europe/Madrid" })} · Simulado</span></button>{expanded === item.id && <div><p className="email-message-body">{item.body}</p><details><summary>Destinatarios registrados</summary>{item.emails.map(email => <p key={email}>{email}</p>)}</details></div>}</article>)}</section>
   </div>;
 }

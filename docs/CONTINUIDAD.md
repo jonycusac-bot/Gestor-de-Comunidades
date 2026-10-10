@@ -1,5 +1,42 @@
 # Continuidad del proyecto — 18/09/2026
 
+## Publicación autorizada — 10/10/2026
+
+- El usuario autoriza guardar en GitHub y Vercel los cambios locales de Documentos (PDF por comunidad), Juntas (convocatoria/acta, edición y prueba por correo), eliminación del historial de Comunicaciones y ajustes de tabla.
+- Lint y build correctos antes de publicar; aviso conocido de bundle. Vercel continúa como demo estática: la prueba real de correo requiere servidor local y no funciona en el alojamiento estático. Los PDF locales no se transfieren a Vercel; cada origen/navegador conserva su propia biblioteca.
+- Esta autorización es para esta publicación; se mantiene pedir permiso para futuras subidas.
+
+## Correo de prueba desde Juntas — local 10/10/2026
+
+- El usuario elige primero prueba a su propio correo, no envío a propietarios reales. Juntas incorpora Preparar prueba por correo con datos de la reunión y sus PDF. Usa la dirección fija EMAIL_TEST_RECIPIENT, la integración Resend local y revisión/confirmación explícita del usuario.
+- Mantiene la restricción a Terrazas de Bel Air, loopback y desactivación en producción. Máximo dos PDF y 5 MB en total en correo; se valida también en servidor. Los archivos de hasta 10 MB siguen siendo válidos para almacenamiento local, pero no para esta prueba por correo.
+- Preparar no envía; el botón Enviar prueba real transmite el contenido y PDF a Resend para el único destinatario autorizado. Aceptación no equivale a entrega confirmada. Sin publicación en GitHub/Vercel.
+- Comprobaciones con proveedor simulado: restricción de comunidad, destinatario inmutable, validación de PDF y adjuntos enviados correctamente. Prueba real autorizada al correo del usuario con junta y dos PDF ficticios: Resend aceptó el envío, referencia `01a126b6-2d4c-7cbe-8233-ed9c2b013cc2`. Pendiente confirmación del usuario de recepción en buzón. No se envió a propietarios.
+
+## Juntas con PDF — trabajo local 10/10/2026
+
+- Cada junta ofrece Modificar junta: editar título, fecha, hora y lugar; sustituir PDF opcionalmente, conservando los archivos actuales al dejar la selección vacía. En realizadas con convocatoria se permite sustituir también esta. Se conserva el ID y el estado; pasar a realizada sigue utilizando la acción específica con acta.
+
+- Juntas incorpora Próximas juntas y Juntas realizadas, alta con título, fecha, hora/lugar opcionales y PDF de convocatoria o acta (máximo 10 MB). Marcar como realizada exige adjuntar acta y conserva la convocatoria original.
+- Datos y PDF guardados en IndexedDB por comunidad, solo en este navegador/origen. No se convierten automáticamente en publicaciones para propietarios ni se copian a Documentos. La agenda ficticia antigua no se migra a juntas con archivos.
+- Pendiente de revisión del usuario en local. Sin publicación en GitHub ni Vercel.
+- Comprobado en localhost con PDF ficticio: alta de próxima junta, paso a realizada adjuntando acta, conservación de convocatoria y acta tras recarga. Lint y build correctos; persiste aviso conocido de tamaño de bundle.
+
+## Historial de Comunicaciones — cambios locales 10/10/2026
+
+- Se añade selección individual y botón Eliminar seleccionada al historial de simulaciones de la comunidad activa. Persiste el resultado solo si localStorage acepta la escritura. Deshacer eliminación permite recuperar la última entrada eliminada antes de salir de la sección o cambiar de comunidad.
+- Cambios pendientes de revisión local; sin publicación en GitHub ni Vercel.
+
+## Trabajo local: PDF por comunidad — 10/10/2026
+
+- Ajuste local de tabla Documentos: proporciones de las cuatro primeras columnas reducidas un 20 %, espacio mínimo de 140 px para Archivo y enlaces sin partir palabras.
+
+- Preferencia expresa: preparar y mostrar cambios en local; pedir autorización antes de subir a GitHub o Vercel. Un push a main activa Vercel. No publicar automáticamente.
+- Documentos permite guardar un PDF de hasta 10 MB con título y categoría en la comunidad seleccionada. Guarda archivo y metadatos en IndexedDB por ID de comunidad, separados del censo de localStorage. Permite abrir y descargar el PDF, y conservarlo al recargar. Los registros anteriores se identifican como ejemplos sin PDF adjunto.
+- Almacenamiento exclusivo del navegador/origen, sin subida a un servidor ni acceso desde otros dispositivos. Restaurar demo conserva esta biblioteca independiente; borrar los datos del sitio elimina los PDF locales.
+- Implementación local pendiente de revisión del usuario; no subida a GitHub ni Vercel.
+- Validación local: lint y build correctos (aviso de bundle conocido). PDF ficticio añadido a Terrazas de Bel Air, visible con enlaces Abrir/Descargar, conservado tras recargar y ausente en Jardines del Sol. La validación del archivo comprueba extensión, tamaño y cabecera PDF; no analiza todo el contenido del PDF.
+
 ## Página principal con gestión lateral — 10/10/2026
 
 - El selector inicial incorpora la misma barra lateral de gestión del panel, conservando las tarjetas compactas y la entrada sin comunidad seleccionada. La pantalla de acceso no cambia.
