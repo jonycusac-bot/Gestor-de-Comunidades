@@ -1,5 +1,13 @@
 # Continuidad del proyecto — 18/09/2026
 
+## Punto de reanudación — 10/10/2026
+
+- Usuario termina por hoy; retomar mañana con explicación sencilla, paso a paso.
+- Conexión Supabase publicada por autorización expresa en main: 0ac6803. Comprobado HTTP 200 y bundle nuevo en https://fincaflow-phi.vercel.app/ con fincaflow-private, fincaflow_files y UI de nube. Lint/build correctos. No se ha comprobado subida real autenticada.
+- Próximo paso: abrir FincaFlow, comprobar si el usuario dispone de cuenta FincaFlow (distinta de la cuenta del panel Supabase), iniciar sesión él mismo y probar PDF ficticio en Documentos de comunidad predefinida, recargar y comprobar recuperación. No pedir contraseña por chat. Ver demostración continúa local.
+- Panel de archivos: https://supabase.com/dashboard/project/wytejpxqujzazgyfdobt/storage/files . La raíz wytejpxqujzazgyfdobt.supabase.co es API y devuelve requested path is invalid al abrirla directamente; no es página de acceso.
+- Se mantiene pedir autorización antes de futuras publicaciones GitHub/Vercel. Esta nota se guarda localmente al cerrar la sesión de trabajo.
+
 ## Publicación de Supabase autorizada — 10/10/2026
 
 - El usuario autoriza publicar la conexión privada de Documentos y Juntas en GitHub y Vercel. Pendiente verificar despliegue concreto tras push.
@@ -170,3 +178,56 @@ Producto web comercial para administradores de fincas: gestionar varias comunida
 - La ruta requiere conexión loopback, hostname local, origen local y cabecera explícita; límite de un intento por minuto e idempotencia. UI con revisión independiente y botón Enviar prueba real. El envío general continúa simulado.
 - Estado: CORREO ACEPTADO por Resend y recepción confirmada expresamente por el usuario el 09/10/2026. Prueba con asunto [PRUEBA FincaFlow] Comprobación de correo de Terrazas de Bel Air, para portal 4, puerta 2. Identificador del proveedor: 01a121e4-a90c-7340-a270-366863680c47. El servidor local se reinició con la configuración. La aplicación distingue aceptación del proveedor de entrega; la confirmación de recepción de esta prueba procede del usuario.
 - Para configurar otro PC: crear cuenta Resend con el correo autorizado, generar clave de envío, pegarla únicamente en .env y reiniciar npm run dev. No compartir la clave por chat ni añadirla a GitHub.
+
+## Skill de diseño — 11/10/2026
+
+- Instalado Impeccable desde el repositorio oficial pbakaus/impeccable en .agents/skills/impeccable, limitado a este proyecto mediante skill-installer. Disponible para el siguiente turno. No se instalaron hooks automáticos.
+- Objetivo del usuario: mejorar la presentación visual de FincaFlow. Pendiente aplicar revisión y cambios visuales en local; esta instalación no modifica la interfaz ni publica en GitHub/Vercel.
+
+
+## Prueba visual local — 11/10/2026
+
+- Primera mejora con las pautas de Impeccable limitada al selector inicial de Comunidades: mayor legibilidad, alineación de tarjetas, contador de resultados, búsqueda etiquetada y foco accesible. Mantiene identidad verde y cuatro columnas en escritorio. CSS separado en src/components/community-selector-hub.css.
+- Verificado en localhost:3000 en escritorio y móvil de 390 px; búsqueda sin resultados y limpieza del filtro. Ajustada altura del buscador móvil. Lint/build correctos; aviso conocido de bundle grande. El build requirió ejecución fuera del aislamiento por EPERM de Windows.
+- Servidor local iniciado para revisión del usuario. Sin commit, push ni publicación en Vercel. Pendiente opinión del usuario sobre esta primera prueba visual.
+
+
+## Prueba visual retirada — 11/10/2026
+
+- El usuario descarta la prueba visual por no apreciar mejoras suficientes. Revertidos exclusivamente los cambios del selector y eliminado su CSS de prueba; interfaz anterior recuperada. Se conserva instalado Impeccable. No se publicó.
+- Nuevo tema de planificación: canal privado de mensajes de propietarios hacia el gestor; pendiente concretar e implementar. No se ha autorizado todavía construir una app independiente.
+
+
+## Mensajería: primera prueba local — 11/10/2026
+
+- Autorizada la primera prueba. Nuevo módulo Mensajes con bandeja del gestor y botón Probar como propietario. Identidad fija ficticia Ana Ejemplo / Portal demo / Vivienda A; no toma datos del censo real. Asunto, texto, historial, respuestas y estados Nueva / En gestión / Resuelta.
+- Persistencia localStorage separada por comunidad, sincronización entre pestañas del mismo origen y botón Actualizar. Validación de datos almacenados; errores de escritura conservan el texto. Simulación explícita sin autenticación de roles ni privacidad real; sin adjuntos, correo ni envío Supabase.
+- Verificado en localhost: crear mensaje ficticio, recibir como gestor, responder, marcar Resuelta y conservar los dos mensajes y estado tras recarga. Inspección móvil y escritorio. Lint/build correctos, aviso conocido de bundle grande. No publicado en GitHub/Vercel.
+- Próxima fase: tablas de conversaciones/mensajes, vinculación segura de cuentas a comunidad/vivienda y administrador, RLS y portal independiente. Pendiente conectar y probar entre dispositivos; el selector de roles actual no es control de acceso.
+- Consultados precios oficiales Supabase: Free con API ilimitada, 500 MB de base de datos y 50.000 MAU; existen otros límites. No se comprobó el plan de la cuenta ni se cambió facturación.
+
+
+## Preparación del portal privado — 11/10/2026
+
+- Usuario autoriza preparar mensajería real para él como propietario de Bel Air y otra cuenta suya como gestor. Los correos se facilitan en chat; no se incorporan al código ni documentación compartida. No solicita todavía publicar.
+- Portal /?portal=propietario con acceso de propietarios, bandeja privada autenticada en Mensajes para Bel Air, direccionamiento de cuentas owner al portal y simulación local conservada solo en modo demo. API REST Supabase con renovación de sesión, historial paginado, errores visibles, actualización manual e IDs estables para reintentos.
+- SQL preparado en docs/supabase-messages.sql: membresías administradas, conversaciones y mensajes con RLS, privilegios por columna, creación atómica con función security invoker. Prueba transaccional de permisos preparada en docs/supabase-messages-check.sql; todavía NO ejecutada. Instrucciones en docs/MENSAJERIA_PRIVADA.md.
+- Lint/build correctos y cuatro pruebas automáticas de API simulada correctas (renovación, denegación, paginación y respuesta 204). Entrada de propietario revisada en localhost. Pendiente verificar flujo autenticado y RLS en Supabase; no afirmar envío real ni aislamiento probado.
+- Acceso al panel Supabase disponible en navegador integrado. Se observó la cuenta del propietario en Auth; pendiente confirmar la segunda cuenta, instalar esquema y vincular ambas. Las contraseñas se introducen por el usuario fuera del chat. Sin correos, invitaciones, push ni publicación.
+
+
+- Comprobación final en Auth: propietario existente confirmado; gestor no encontrado al aplicar filtro con Enter. Se deja abierto Create a new user con correo del gestor y Auto confirm activo; el usuario debe introducir una contraseña propia de FincaFlow y completar Create user. No se creó la cuenta ni se instaló el esquema en esta sesión.
+
+
+## Activación privada Supabase — 11/10/2026
+
+- Confirmación expresa del usuario para activar las dos cuentas como propietario y gestor. Instalado el esquema de docs/supabase-messages.sql en el proyecto existente mediante SQL Editor; ejecución correcta.
+- Ejecutadas las comprobaciones equivalentes de docs/supabase-messages-check.sql con roles authenticated/anon: creación idempotente, respuesta del gestor, cambio de estado, bloqueo de tercero/anónimo, cambio de destinatario, autoasignación de rol y borrado de historial. Sin errores. ROLLBACK completado y comprobado cero usuarios ficticios restantes.
+- Insertadas únicamente las dos membresías reales autorizadas, owner/manager de bel-air. Vivienda vacía hasta confirmación del usuario; no se inventa. Datos personales no añadidos a ficheros del repositorio.
+- Pendiente inicio de sesión del usuario en el portal local y envío real desde su cuenta; pruebas SQL no equivalen a sesión de navegador. Web publicada todavía sin este código; sin push ni despliegue. Para funcionar con PC apagado sigue pendiente publicar con autorización y verificar URL concreta.
+
+
+## Publicación autorizada de mensajería — 11/10/2026
+
+- Usuario autoriza publicar los cambios tras comprobar que localhost no funciona desde su teléfono. Se publica portal /?portal=propietario y Mensajes privado de Bel Air. Esquema y dos membresías ya activados en Supabase; pruebas SQL y cuatro pruebas API correctas. Lint/build correctos con aviso conocido de bundle. Pendiente verificar despliegue concreto y prueba autenticada del usuario.
+

@@ -49,3 +49,8 @@ Estado comprobado el 09/10/2026: correo aceptado por Resend y recepción confirm
 ## Almacenamiento privado
 
 Documentos y Juntas usan Supabase al iniciar sesión con cuenta FincaFlow. Ver demostración conserva archivos solo en el navegador. Instalación inicial: `docs/supabase-storage.sql`. Acceso privado por cuenta; usa la misma cuenta y comunidad ficticia predefinida para revisar desde otro equipo. Los PDF existentes no se migran automáticamente. Comunidades personalizadas, censo y comunicaciones siguen siendo locales. Publicación autorizada el 10/10/2026. Pendiente prueba autenticada con cuenta FincaFlow del usuario.
+
+## Mensajería privada de prueba
+
+Portal del propietario: /?portal=propietario. Gestor: seleccionar Terrazas de Bel Air y abrir Mensajes. Requiere las dos cuentas vinculadas en Supabase; Ver demostración conserva una simulación local independiente. Sin adjuntos ni correos. Configuración y límites: docs/MENSAJERIA_PRIVADA.md.
+

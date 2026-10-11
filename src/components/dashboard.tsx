@@ -7,6 +7,9 @@ import { CommunityMeetings } from "./community-meetings";
 import { CommunityDocuments } from "./community-documents";
 import { PaymentsDemo } from "./payments-demo";
 import { EmailCommunications } from "./email-communications";
+import { OwnerMessages } from "./owner-messages";
+import { PrivateMessages } from "./private-messages";
+import { useSession } from "./auth-gate";
 import { initialCommunitiesList, CommunityModel, OwnerModel } from "../data/communitiesData";
 import { OwnersView, sampleOwnersBank } from "./owners-view";
 import { CommunitySelectorHub } from "./community-selector-hub";
@@ -18,6 +21,7 @@ const nav = [
   ["folder", "Documentos"],
   ["calendar", "Juntas"],
   ["message", "Comunicaciones"],
+  ["message", "Mensajes"],
   ["wallet", "Economía"],
 ] as const;
 
@@ -1286,6 +1290,7 @@ function ModuleView({
   onNavigate: (module: string) => void;
   notify: (message: string) => void;
 }) {
+  const session = useSession();
   const [filter, setFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [demoCommunications, setDemoCommunications] = useState(
@@ -1331,6 +1336,7 @@ function ModuleView({
     "Pendientes de pago": `Cuotas pendientes de ${currentCommunity.name}`,
     Propietarios: `Propietarios, viviendas y pagos de ${currentCommunity.name}`,
     Comunicaciones: `Envía comunicados por correo a los propietarios de ${currentCommunity.name}`,
+    Mensajes: session ? "Conversaciones privadas con el propietario autorizado" : "Prueba local de conversaciones con propietarios ficticios",
     Documentos: `Biblioteca documental de ${currentCommunity.name}`,
     Juntas: `Convocatorias, orden del día y actas de ${currentCommunity.name}`,
     Economía: `Control económico y cuotas de ${currentCommunity.name}`,
@@ -1363,14 +1369,14 @@ function ModuleView({
           <h1>{title}</h1>
           <span>{subtitles[active] || "Módulo en preparación"}</span>
         </div>
-        {!["Economía", "Comunidades", "Listado de comunidades", "Pendientes de pago", "Propietarios", "Comunicaciones", "Documentos", "Juntas"].includes(active) && (
+        {!["Economía", "Comunidades", "Listado de comunidades", "Pendientes de pago", "Propietarios", "Mensajes", "Comunicaciones", "Documentos", "Juntas"].includes(active) && (
           <button className="primary" onClick={() => setShowForm(true)}>
             <Icon name="plus" size={18} /> Nuevo
           </button>
         )}
       </div>
 
-      {!["Economía", "Comunidades", "Listado de comunidades", "Pendientes de pago", "Propietarios", "Comunicaciones", "Juntas"].includes(active) && (
+      {!["Economía", "Comunidades", "Listado de comunidades", "Pendientes de pago", "Propietarios", "Mensajes", "Comunicaciones", "Juntas"].includes(active) && (
         <div className="module-toolbar">
           <label className="module-search">
             <Icon name="search" size={17} />
@@ -1532,6 +1538,9 @@ function ModuleView({
       )}
 
       {active === "Comunicaciones" && <EmailCommunications community={currentCommunity} />}
+      {active === "Mensajes" && (session
+        ? currentCommunity.id === 'bel-air' ? <PrivateMessages /> : <p>La prueba privada está habilitada solo para Terrazas de Bel Air.</p>
+        : <OwnerMessages key={currentCommunity.id} communityId={currentCommunity.id} communityName={currentCommunity.name} />)}
 
       {/* Avisos de la comunidad activa */}
       {active === "Avisos y noticias" && (
@@ -1574,7 +1583,7 @@ function ModuleView({
       {active === "Economía" && <PaymentsDemo community={currentCommunity} />}
 
       {/* Módulos restantes */}
-      {!["Economía", "Comunidades", "Listado de comunidades", "Pendientes de pago", "Propietarios", "Comunicaciones", "Avisos y noticias", "Documentos", "Juntas"].includes(
+      {!["Economía", "Comunidades", "Listado de comunidades", "Pendientes de pago", "Propietarios", "Mensajes", "Comunicaciones", "Avisos y noticias", "Documentos", "Juntas"].includes(
         active
       ) && (
         <div className="empty-module">

@@ -8,6 +8,7 @@ const SessionContext = createContext<AuthSession | null>(null);
 export const useSession = () => useContext(SessionContext);
 
 export function AuthGate({ children }: { children: ReactNode }) {
+  const ownerPortal = new URLSearchParams(window.location.search).get('portal') === 'propietario';
   const [session, setSession] = useState<AuthSession | null>(null);
   const [demo, setDemo] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -35,15 +36,16 @@ export function AuthGate({ children }: { children: ReactNode }) {
   if (!session && !demo) return <main className={styles.page}>
     <section className={styles.card}>
       <div className={styles.brand}><b>F</b><span><strong>FincaFlow</strong><small>Gestión de comunidades</small></span></div>
-      <div className={styles.intro}><p>ACCESO PROFESIONAL</p><h1>Bienvenido de nuevo</h1><span>Gestiona todas tus comunidades desde un único lugar.</span></div>
+      <div className={styles.intro}><p>{ownerPortal ? 'ACCESO DE PROPIETARIOS' : 'ACCESO PROFESIONAL'}</p><h1>{ownerPortal ? 'Tu comunidad, en contacto' : 'Bienvenido de nuevo'}</h1><span>{ownerPortal ? 'Terrazas de Bel Air · Envía mensajes a tu administración.' : 'Gestiona todas tus comunidades desde un único lugar.'}</span></div>
       <form onSubmit={submit}>
         <label>Correo electrónico<input name="email" type="email" autoComplete="email" required placeholder="nombre@empresa.com"/></label>
         <label>Contraseña<input name="password" type="password" autoComplete="current-password" required placeholder="••••••••"/></label>
         {error && <p className={styles.error} role="alert">{error}</p>}
         <button className={styles.primary} disabled={busy}>{busy ? "Accediendo…" : "Iniciar sesión"}</button>
       </form>
-      <div className={styles.separator}><span>o</span></div>
-      <button className={styles.demo} onClick={() => setDemo(true)}>Ver demostración</button>
+      {!ownerPortal && <div className={styles.separator}><span>o</span></div>}
+      {!ownerPortal && <button className={styles.demo} onClick={() => setDemo(true)}>Ver demostración</button>}
+      <p><a href={ownerPortal ? '/' : '/?portal=propietario'}>{ownerPortal ? 'Acceso del gestor' : 'Soy propietario · Acceder a mi portal'}</a></p>
       <small className={styles.note}>El registro público está desactivado. Las cuentas las crea el administrador.</small>
     </section>
     <aside className={styles.visual}><div><span>Multi-comunidad</span><span>Gestión centralizada</span><span>Información segura</span></div><h2>Gestión integral de comunidades</h2><p>Plataforma profesional para administradores de fincas</p></aside>

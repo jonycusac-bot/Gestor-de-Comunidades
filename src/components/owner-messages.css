@@ -1,0 +1,25 @@
+.owner-messages { color: #20392b; font-size: 14px; line-height: 1.6; }
+.owner-messages p { overflow-wrap: anywhere; }
+.messages-demo { padding: 16px; background: #fff4d6; color: #654c1b; border-radius: 8px; }
+.messages-controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
+.messages-controls button { border: 1px solid #b7cabe; background: white; padding: 10px 14px; border-radius: 8px; cursor: pointer; }
+.messages-controls button[aria-pressed="true"] { background: #257454; color: white; border-color: #257454; }
+.owner-messages :is(button,input,textarea,select):focus-visible { outline: 3px solid #257454; outline-offset: 3px; }
+.owner-messages label { display: grid; gap: 6px; margin-bottom: 16px; font-weight: 600; }
+.owner-messages :is(input,textarea,select) { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid #b7cabe; border-radius: 8px; background: white; color: #20392b; font: inherit; }
+.owner-messages textarea { resize: vertical; }
+.owner-messages button:disabled { opacity: .55; cursor: not-allowed; }
+.messages-compose { max-width: 720px; margin: 24px 0; padding: 20px; border: 1px solid #d2dfd7; border-radius: 12px; background: white; }
+.messages-layout { display: grid; grid-template-columns: minmax(180px, .7fr) minmax(0, 1.6fr); gap: 24px; align-items: start; }
+.messages-list button { width: 100%; display: block; text-align: left; border: 0; border-bottom: 1px solid #d2dfd7; background: white; padding: 16px; cursor: pointer; overflow-wrap: anywhere; }
+.messages-list button:hover { background: #f0f7f3; }
+.messages-list button[aria-pressed="true"] { background: #e0eee6; }
+.messages-list span { display: block; color: #4f6759; font-size: 12px; }
+.messages-detail { min-width: 0; padding: 20px; background: white; border: 1px solid #d2dfd7; border-radius: 12px; }
+.messages-detail h3 { margin-top: 0; overflow-wrap: anywhere; }
+.messages-history { list-style: none; margin: 24px 0; padding: 0; }
+.messages-history li { padding: 16px 0; border-top: 1px solid #d2dfd7; }
+.messages-history time { display: block; color: #4f6759; font-size: 12px; }
+.messages-history p { white-space: pre-wrap; margin-bottom: 0; max-width: 70ch; }
+.messages-history .manager > strong { color: #257454; }
+@media (max-width: 800px) { .messages-layout { grid-template-columns: 1fr; } }
